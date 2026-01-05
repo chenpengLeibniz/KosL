@@ -31,18 +31,8 @@ kos_state_t init_system(void);
 // 捕获物理信号（从标准输入或API）
 bitstream capture_physical_signal(void);
 
-// ========== 业务特定接口（可选，用于MVP演示）==========
-// 注意：这些接口是业务特定的，不应该在通用的 elab 算子中使用
-// 它们可以在应用层使用，或者通过插件机制注册到系统中
-
-// 解析转账信号（格式：from_account,to_account,amount）
-// 返回TransferEvent结构
-// 这个函数应该在应用层调用，而不是在 elab 中
-int kos_parse_transfer_signal(bitstream signal, void* transfer_event);
-
-// SQLite数据库接口（物理存储）
+// ========== 数据库接口（物理存储）==========
 int kos_db_init(const char* db_path);
-int kos_db_write_transfer(kos_state_t* sigma, void* transfer_event);
 int kos_db_close(void);
 
 #endif

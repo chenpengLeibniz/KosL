@@ -38,7 +38,7 @@ bool kos_step(kos_state_t* sigma);
 bool kos_kernel_step(kos_state_t* sigma, kos_term* event_pair);
 
 // 验证事件的前置条件（Pre(e)）
-// 对于转账事件：验证余额充足 + 实名证明
+// 验证事件证明是否满足前置条件
 bool kos_verify_precondition(kos_term* event_pair, kos_state_t* sigma);
 
 // 更新知识集（添加新证明的事实）

@@ -4,7 +4,6 @@
 #include <string.h>
 
 // 验证事件的前置条件 Pre(e)
-// 对于转账事件：验证余额充足 + 实名证明
 bool kos_verify_precondition(kos_term* event_pair, kos_state_t* sigma) {
     if (!event_pair || !sigma || event_pair->kind != KOS_PAIR) {
         return false;
@@ -18,7 +17,6 @@ bool kos_verify_precondition(kos_term* event_pair, kos_state_t* sigma) {
     }
     
     // 使用类型检查验证证明是否满足前置条件
-    // 对于转账事件，证明必须包含：余额充足证明 + 实名证明
     return kos_type_check(sigma->K, p, e);
 }
 
@@ -38,7 +36,7 @@ bool kos_kernel_step(kos_state_t* sigma, kos_term* event_pair) {
     }
 
     // 2. 前置条件验证 Pre(e) [cite: 630]
-    // 验证证明是否满足事件的前置条件（余额充足 + 实名）
+    // 验证证明是否满足事件的前置条件
     if (!kos_verify_precondition(event_pair, sigma)) {
         return false; // 拦截非法演化 [cite: 632]
     }
