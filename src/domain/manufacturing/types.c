@@ -31,8 +31,10 @@ kos_term* kos_mk_batch_id(const char* batch_id) {
     
     TypeOntology* ontology = get_manufacturing_ontology();
     if (ontology) {
-        // 使用本体构建类型实例
-        return kos_ontology_mk_type_instance(ontology, "BatchID", (void*)batch_id);
+        // 构造BatchID实例（基于ID类型）
+        kos_term* batch_id_term = kos_mk_id(batch_id);
+        // 使用本体构建类型实例（包含类型检查）
+        return kos_ontology_mk_type_instance(ontology, "BatchID", batch_id_term, NULL);
     }
     
     // 回退到直接构建

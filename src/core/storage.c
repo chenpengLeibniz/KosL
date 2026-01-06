@@ -189,13 +189,363 @@ kos_serialized* kos_term_serialize(kos_term* t) {
     return result;
 }
 
-// 从 JSON 格式反序列化 term（简化实现）
-// 注意：这是一个简化版本，完整的 JSON 解析需要更复杂的实现
-kos_term* kos_term_deserialize(const char* json_str) {
-    // TODO: 实现完整的 JSON 解析
-    // 这里返回 NULL 作为占位符
-    (void)json_str;
+// 辅助函数：跳过空白字符
+static const char* skip_whitespace(const char* str) {
+    while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r') {
+        str++;
+    }
+    return str;
+}
+
+// 辅助函数：解析JSON字符串（带转义）
+static const char* parse_json_string(const char* str, char** out_str) {
+    str = skip_whitespace(str);
+    if (*str != '"') {
+        return NULL;
+    }
+    str++; // 跳过开始引号
+    
+    size_t len = 0;
+    const char* start = str;
+    while (*str != '\0' && *str != '"') {
+        if (*str == '\\') {
+            str++; // 跳过转义字符
+            if (*str == '\0') break;
+        }
+        str++;
+        len++;
+    }
+    
+    if (*str != '"') {
+        return NULL;
+    }
+    
+    // 分配内存并复制字符串（处理转义）
+    char* result = (char*)malloc(len + 1);
+    if (!result) {
+        return NULL;
+    }
+    
+    size_t pos = 0;
+    const char* p = start;
+    while (p < str) {
+        if (*p == '\\' && p + 1 < str) {
+            p++;
+            switch (*p) {
+                case '"': result[pos++] = '"'; break;
+                case '\\': result[pos++] = '\\'; break;
+                case 'n': result[pos++] = '\n'; break;
+                case 'r': result[pos++] = '\r'; break;
+                case 't': result[pos++] = '\t'; break;
+                default: result[pos++] = *p; break;
+            }
+            p++;
+        } else {
+            result[pos++] = *p++;
+        }
+    }
+    result[pos] = '\0';
+    
+    *out_str = result;
+    return str + 1; // 跳过结束引号
+}
+
+// 辅助函数：解析JSON数字
+static const char* parse_json_number(const char* str, int* out_num) {
+    str = skip_whitespace(str);
+    int num = 0;
+    int sign = 1;
+    
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    }
+    
+    while (*str >= '0' && *str <= '9') {
+        num = num * 10 + (*str - '0');
+        str++;
+    }
+    
+    *out_num = num * sign;
+    return str;
+}
+
+// 辅助函数：解析JSON布尔值
+static const char* parse_json_bool(const char* str, bool* out_bool) {
+    str = skip_whitespace(str);
+    if (strncmp(str, "true", 4) == 0) {
+        *out_bool = true;
+        return str + 4;
+    } else if (strncmp(str, "false", 5) == 0) {
+        *out_bool = false;
+        return str + 5;
+    }
     return NULL;
+}
+
+// 辅助函数：解析null
+static const char* parse_json_null(const char* str) {
+    str = skip_whitespace(str);
+    if (strncmp(str, "null", 4) == 0) {
+        return str + 4;
+    }
+    return NULL;
+}
+
+// 辅助函数：查找JSON对象中键的值（返回值的起始位置）
+static const char* find_json_value(const char* json_str, const char* key) {
+    char key_pattern[256];
+    snprintf(key_pattern, sizeof(key_pattern), "\"%s\"", key);
+    
+    const char* key_pos = strstr(json_str, key_pattern);
+    if (!key_pos) {
+        return NULL;
+    }
+    
+    // 跳过键名和冒号
+    const char* value_start = key_pos + strlen(key_pattern);
+    value_start = skip_whitespace(value_start);
+    if (*value_start == ':') {
+        value_start++;
+        value_start = skip_whitespace(value_start);
+        return value_start;
+    }
+    
+    return NULL;
+}
+
+// 辅助函数：提取JSON对象（找到匹配的结束大括号）
+static const char* extract_json_object(const char* json_str, char** out_obj) {
+    json_str = skip_whitespace(json_str);
+    if (*json_str != '{') {
+        return NULL;
+    }
+    
+    int depth = 0;
+    bool in_string = false;
+    const char* start = json_str;
+    const char* p = json_str;
+    
+    while (*p != '\0') {
+        if (*p == '"' && (p == start || *(p-1) != '\\')) {
+            in_string = !in_string;
+        } else if (!in_string) {
+            if (*p == '{') {
+                depth++;
+            } else if (*p == '}') {
+                depth--;
+                if (depth == 0) {
+                    // 找到匹配的结束大括号
+                    size_t len = p - start + 1;
+                    *out_obj = (char*)malloc(len + 1);
+                    if (!*out_obj) {
+                        return NULL;
+                    }
+                    memcpy(*out_obj, start, len);
+                    (*out_obj)[len] = '\0';
+                    return p + 1;
+                }
+            }
+        }
+        p++;
+    }
+    
+    return NULL;
+}
+
+// 递归反序列化 term
+static kos_term* deserialize_term_recursive(const char* json_str) {
+    if (!json_str) {
+        return NULL;
+    }
+    
+    json_str = skip_whitespace(json_str);
+    if (*json_str != '{') {
+        return NULL;
+    }
+    
+    // 提取整个JSON对象
+    char* obj_str = NULL;
+    const char* next = extract_json_object(json_str, &obj_str);
+    if (!obj_str) {
+        return NULL;
+    }
+    
+    // 解析kind
+    const char* kind_value = find_json_value(obj_str, "kind");
+    if (!kind_value) {
+        free(obj_str);
+        return NULL;
+    }
+    
+    char* kind_str = NULL;
+    const char* after_kind = parse_json_string(kind_value, &kind_str);
+    if (!kind_str) {
+        free(obj_str);
+        return NULL;
+    }
+    
+    // 确定term_kind
+    term_kind kind;
+    if (strcmp(kind_str, "VAL") == 0) {
+        kind = KOS_VAL;
+    } else if (strcmp(kind_str, "TIME") == 0) {
+        kind = KOS_TIME;
+    } else if (strcmp(kind_str, "ID") == 0) {
+        kind = KOS_ID;
+    } else if (strcmp(kind_str, "PROP") == 0) {
+        kind = KOS_PROP;
+    } else if (strcmp(kind_str, "SIGMA") == 0) {
+        kind = KOS_SIGMA;
+    } else if (strcmp(kind_str, "PI") == 0) {
+        kind = KOS_PI;
+    } else if (strcmp(kind_str, "SUM") == 0) {
+        kind = KOS_SUM;
+    } else if (strcmp(kind_str, "PAIR") == 0) {
+        kind = KOS_PAIR;
+    } else if (strcmp(kind_str, "U") == 0) {
+        kind = KOS_U;
+    } else if (strcmp(kind_str, "TYPE") == 0) {
+        kind = KOS_TYPE;
+    } else {
+        free(kind_str);
+        free(obj_str);
+        return NULL;
+    }
+    
+    free(kind_str);
+    
+    // 创建term
+    kos_term* term = (kos_term*)calloc(1, sizeof(kos_term));
+    if (!term) {
+        free(obj_str);
+        return NULL;
+    }
+    
+    term->kind = kind;
+    
+    // 根据类型解析数据
+    switch (kind) {
+        case KOS_VAL:
+        case KOS_TIME:
+        case KOS_ID:
+        case KOS_PROP: {
+            const char* val_value = find_json_value(obj_str, "val");
+            if (val_value) {
+                char* val_str = NULL;
+                parse_json_string(val_value, &val_str);
+                if (val_str) {
+                    term->data.atomic.val = val_str;
+                }
+            }
+            const char* type_value = find_json_value(obj_str, "type");
+            if (type_value && parse_json_null(type_value) == NULL) {
+                term->data.atomic.type = deserialize_term_recursive(type_value);
+            }
+            break;
+        }
+        
+        case KOS_PAIR: {
+            const char* data_value = find_json_value(obj_str, "data");
+            if (data_value) {
+                term->data.pair.data = deserialize_term_recursive(data_value);
+            }
+            const char* proof_value = find_json_value(obj_str, "proof");
+            if (proof_value) {
+                term->data.pair.proof = deserialize_term_recursive(proof_value);
+            }
+            break;
+        }
+        
+        case KOS_SIGMA: {
+            const char* domain_value = find_json_value(obj_str, "domain");
+            if (domain_value) {
+                term->data.sigma.domain = deserialize_term_recursive(domain_value);
+            }
+            const char* body_value = find_json_value(obj_str, "body");
+            if (body_value) {
+                term->data.sigma.body = deserialize_term_recursive(body_value);
+            }
+            break;
+        }
+        
+        case KOS_PI: {
+            const char* domain_value = find_json_value(obj_str, "domain");
+            if (domain_value) {
+                term->data.pi.domain = deserialize_term_recursive(domain_value);
+            }
+            const char* body_value = find_json_value(obj_str, "body");
+            if (body_value && parse_json_null(body_value) == NULL) {
+                term->data.pi.body = deserialize_term_recursive(body_value);
+            }
+            const char* body_term_value = find_json_value(obj_str, "body_term");
+            if (body_term_value && parse_json_null(body_term_value) == NULL) {
+                term->data.pi.body_term = deserialize_term_recursive(body_term_value);
+            }
+            break;
+        }
+        
+        case KOS_SUM: {
+            const char* left_type_value = find_json_value(obj_str, "left_type");
+            if (left_type_value) {
+                term->data.sum.left_type = deserialize_term_recursive(left_type_value);
+            }
+            const char* right_type_value = find_json_value(obj_str, "right_type");
+            if (right_type_value) {
+                term->data.sum.right_type = deserialize_term_recursive(right_type_value);
+            }
+            const char* is_left_value = find_json_value(obj_str, "is_left");
+            if (is_left_value) {
+                bool is_left = false;
+                parse_json_bool(is_left_value, &is_left);
+                term->data.sum.is_left = is_left;
+            }
+            const char* value_value = find_json_value(obj_str, "value");
+            if (value_value && parse_json_null(value_value) == NULL) {
+                term->data.sum.value = deserialize_term_recursive(value_value);
+            }
+            break;
+        }
+        
+        case KOS_U:
+        case KOS_TYPE: {
+            const char* axis_value = find_json_value(obj_str, "axis");
+            if (axis_value) {
+                int axis = 0;
+                parse_json_number(axis_value, &axis);
+                term->data.universe.axis = (universe_axis)axis;
+            }
+            const char* level_value = find_json_value(obj_str, "level");
+            if (level_value) {
+                int level = 0;
+                parse_json_number(level_value, &level);
+                term->data.universe.level = level;
+            }
+            break;
+        }
+    }
+    
+    // 设置Universe信息（从类型推断或从数据中获取）
+    if (kind == KOS_U || kind == KOS_TYPE) {
+        term->universe.axis = term->data.universe.axis;
+        term->universe.level = term->data.universe.level;
+    } else {
+        // 使用默认Universe信息，实际应该从类型推断
+        term->universe.axis = UNIVERSE_COMPUTATIONAL;
+        term->universe.level = 0;
+    }
+    
+    free(obj_str);
+    return term;
+}
+
+// 从 JSON 格式反序列化 term
+kos_term* kos_term_deserialize(const char* json_str) {
+    if (!json_str) {
+        return NULL;
+    }
+    
+    return deserialize_term_recursive(json_str);
 }
 
 // 释放序列化数据

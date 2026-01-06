@@ -92,10 +92,6 @@ TypeOntology* kos_manufacturing_ontology_init(void) {
     kos_term* overlap_type = kos_mk_pi(time_type, time_range_prop_pi);
     kos_ontology_add_type_definition(ontology, "Overlap", overlap_type, NULL);
     
-    // 添加扩展类型定义
-    extern int kos_manufacturing_ontology_add_generated_types(TypeOntology* ontology);
-    kos_manufacturing_ontology_add_generated_types(ontology);
-    
     // 保存到文件
     kos_ontology_save_to_file(ontology, MANUFACTURING_ONTOLOGY_FILE);
     printf("[Manufacturing] Saved default ontology to: %s\n", MANUFACTURING_ONTOLOGY_FILE);
@@ -111,6 +107,18 @@ int kos_manufacturing_ontology_save(TypeOntology* ontology) {
     
     return kos_ontology_save_to_file(ontology, MANUFACTURING_ONTOLOGY_FILE);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

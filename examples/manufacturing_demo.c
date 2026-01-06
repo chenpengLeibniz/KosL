@@ -21,9 +21,9 @@ int main() {
         return 1;
     }
     printf("   Domain: %s\n", ontology->domain_name);
-    printf("   Atomic types: %zu\n", ontology->atomic_count);
-    printf("   Predicate types: %zu\n", ontology->predicate_count);
-    printf("   Event types: %zu\n\n", ontology->event_count);
+    // TODO: Update to use new type system API
+    // New API: iterate through ontology->type_definitions array
+    printf("   Type definitions: %zu\n\n", ontology->type_count);
     
     // 2. 初始化系统
     printf("2. Initializing System:\n");

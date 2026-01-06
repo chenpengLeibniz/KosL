@@ -149,21 +149,26 @@ kos_term* kos_mk_anomaly(Machine machine, Param param, ParamValue value, Time ti
 kos_term* kos_mk_causal_proof(Anomaly anomaly, FailEvt failure, ProcStep step);
 kos_term* kos_mk_root_cause_report(FailEvt failure, Anomaly anomaly, CausalProof proof);
 
-// 类型本体CRUD操作（在 ontology_crud.c 中实现）
-int kos_manufacturing_add_atomic_type(const char* name, const char* base_type);
-AtomicTypeDef* kos_manufacturing_get_atomic_type(const char* name);
-void kos_manufacturing_list_atomic_types(void);
-int kos_manufacturing_remove_atomic_type(const char* name);
+// ========== 本体管理接口 ==========
+// 负责本体的加载、缓存和访问（单例模式）
 
-int kos_manufacturing_add_predicate_type(const char* name, const char** param_types, int param_count);
-PredicateTypeDef* kos_manufacturing_get_predicate_type(const char* name);
-void kos_manufacturing_list_predicate_types(void);
+// 获取制造业本体实例（单例模式，延迟加载）
+// 首次调用时会从文件加载或创建默认本体
+TypeOntology* kos_manufacturing_ontology_get(void);
 
-int kos_manufacturing_add_event_type(const char* name, const char** field_names, 
-                                    const char** field_types, int field_count);
-EventTypeDef* kos_manufacturing_get_event_type(const char* name);
-void kos_manufacturing_list_event_types(void);
-int kos_manufacturing_remove_event_type(const char* name);
+// 释放制造业本体实例
+// 通常在程序结束时调用
+void kos_manufacturing_ontology_release(void);
+
+// 强制重新加载本体（从文件）
+// 用于运行时更新本体定义
+int kos_manufacturing_ontology_reload(void);
+
+// 检查本体是否已加载
+bool kos_manufacturing_ontology_is_loaded(void);
+
+// 获取本体中的类型数量
+size_t kos_manufacturing_ontology_get_type_count(void);
 
 // 谓词验证
 bool kos_check_in_route(BatchID batch, Machine machine, kos_term* K);

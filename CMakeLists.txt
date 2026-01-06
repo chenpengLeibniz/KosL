@@ -45,11 +45,25 @@ set(MANUFACTURING_SOURCES
     src/domain/manufacturing/traceability.c
     src/domain/manufacturing/runtime_elab.c
     src/domain/manufacturing/ontology_setup.c
+    src/domain/manufacturing/ontology_manager.c
     src/domain/manufacturing/ontology_crud.c
+    src/domain/manufacturing/ontology_extended_generated.c
+)
+
+set(FINANCE_SOURCES
+    src/domain/finance/types.c
+    src/domain/finance/runtime_elab.c
+    src/domain/finance/ontology_setup.c
+    src/domain/finance/ontology_manager.c
+    src/domain/finance/ontology_extended_generated.c
 )
 
 set(ONTOLOGY_SOURCES
     src/core/ontology_manager.c
+)
+
+set(VISUALIZATION_SOURCES
+    src/core/visualization.c
 )
 
 set(MAIN_SOURCE
@@ -63,6 +77,7 @@ set(ALL_SOURCES
     ${RUNTIME_SOURCES}
     ${ONTOLOGY_SOURCES}
     ${MANUFACTURING_SOURCES}
+    ${FINANCE_SOURCES}
     ${MAIN_SOURCE}
 )
 
@@ -86,6 +101,22 @@ set_target_properties(kos_system PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# 创建金融领域演示程序
+add_executable(finance_demo
+    examples/finance_demo.c
+    ${CORE_SOURCES}
+    ${KERNEL_SOURCES}
+    ${RUNTIME_SOURCES}
+    ${ONTOLOGY_SOURCES}
+    ${FINANCE_SOURCES}
+    ${VISUALIZATION_SOURCES}
+)
+
+# 设置输出目录
+set_target_properties(finance_demo PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # 创建制造业演示程序
 add_executable(manufacturing_demo
     examples/manufacturing_demo.c
@@ -94,6 +125,58 @@ add_executable(manufacturing_demo
     ${RUNTIME_SOURCES}
     ${ONTOLOGY_SOURCES}
     ${MANUFACTURING_SOURCES}
+)
+
+# 创建可视化工具
+add_executable(visualize_ontology
+    tools/visualize_ontology.c
+    ${CORE_SOURCES}
+    ${ONTOLOGY_SOURCES}
+    ${VISUALIZATION_SOURCES}
+)
+
+# 创建可视化测试工具（从程序初始化本体）
+add_executable(test_visualization
+    tools/test_visualization.c
+    ${CORE_SOURCES}
+    ${ONTOLOGY_SOURCES}
+    ${VISUALIZATION_SOURCES}
+    ${MANUFACTURING_SOURCES}
+)
+
+# 从JSON文件生成可视化工具
+add_executable(generate_visualization_from_json
+    tools/generate_visualization_from_json.c
+    ${CORE_SOURCES}
+    ${ONTOLOGY_SOURCES}
+    ${VISUALIZATION_SOURCES}
+    ${MANUFACTURING_SOURCES}
+)
+
+# HTML可视化生成工具（使用制造业本体初始化）
+add_executable(generate_html_visualization
+    tools/generate_html_visualization.c
+    ${CORE_SOURCES}
+    ${ONTOLOGY_SOURCES}
+    ${VISUALIZATION_SOURCES}
+    ${MANUFACTURING_SOURCES}
+)
+
+# 设置可视化工具输出目录
+set_target_properties(visualize_ontology PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+set_target_properties(test_visualization PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+set_target_properties(generate_visualization_from_json PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+set_target_properties(generate_html_visualization PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 # 设置演示程序输出目录

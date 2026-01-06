@@ -47,3 +47,20 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Generated ontology files (can be regenerated)
+*.json
+!package.json
+!tsconfig.json
+
+# Backup files
+*.bak
+*_old.c
+*_old.h
+*_backup.c
+*_backup.h
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+

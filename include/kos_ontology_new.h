@@ -129,4 +129,3 @@ kos_term* kos_ontology_mk_sum_type(kos_term* left_type, kos_term* right_type);
 
 
 
-
