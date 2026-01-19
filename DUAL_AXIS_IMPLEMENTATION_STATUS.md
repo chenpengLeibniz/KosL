@@ -1,4 +1,11 @@
-# 双轴世界实现状态报告
+# 双轴世界实现状态报告 / Dual-Axis Universe Implementation Status Report
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 已完成的工作
 
@@ -115,12 +122,127 @@
 - Universe层级系统的完整集成需要类型检查器的支持
 - 建议在完成类型检查器更新后再进行全面的测试
 
+---
 
+<a name="english"></a>
+## English
 
+# Dual-Axis Universe Implementation Status Report
 
+## Completed Work
 
+### 1. ✅ Core Header File Extensions (include/kos_core.h)
 
+- ✅ Added Universe axis type enum (`universe_axis`)
+- ✅ Added Universe level information structure (`universe_info`)
+- ✅ Extended `term_kind` enum, added:
+  - `KOS_TIME` - Time type
+  - `KOS_ID` - Identifier type
+  - `KOS_U` - Computational axis Universe type
+  - `KOS_TYPE` - Logical axis Universe type
+- ✅ Added `universe` field to `kos_term` structure for storing Universe information
+- ✅ Added Universe union member for Universe type data storage
+- ✅ Added Universe level system interface declarations
 
+### 2. ✅ Universe Level System Implementation (src/core/universe.c)
+
+- ✅ Implemented `kos_get_universe_info()` - Get type's Universe information
+- ✅ Implemented `kos_universe_leq()` - Check Universe level relationships
+- ✅ Implemented `kos_universe_lift_to_logic()` - Universe Lifting rule: U_i : Type_{i+1}
+- ✅ Implemented `kos_prop_embed_to_data()` - Proposition Embedding rule: Prop ↪ U_1
+
+### 3. ✅ Type Builder Updates (src/core/type_builder.c)
+
+- ✅ Added `kos_mk_time()` - Create time type
+- ✅ Added `kos_mk_id()` - Create identifier type
+- ✅ Added `kos_mk_universe_computational()` - Create U_i type
+- ✅ Added `kos_mk_universe_logical()` - Create Type_i type
+- ✅ All type builder functions correctly initialize `universe` field
+- ✅ Implemented Universe level calculation for Σ and Π types (max(i,j) rule)
+- ✅ Updated `kos_term_copy()` to support new types
+- ✅ Updated `kos_term_free()` to support new types
+
+### 4. ✅ Storage System Updates (src/core/storage.c)
+
+- ✅ Updated serialization functions to support new types (TIME, ID, U, TYPE)
+- ✅ Added JSON serialization support for new types
+
+### 5. ✅ Build System Updates (CMakeLists.txt)
+
+- ✅ Added `src/core/universe.c` to build list
+
+## Pending Work
+
+### 1. ⏳ Type Checker Updates (src/core/type_checker.c)
+
+**Need to add:**
+- Universe level verification logic
+- Application of Universe Lifting rules
+- Type checking for new types (TIME, ID, U, TYPE)
+- Universe level constraint checking during type construction
+
+**Current status**: Type checker needs extension to support Universe level system
+
+### 2. ⏳ Reduction and Substitution System Updates
+
+**Need to update:**
+- `src/core/reduction.c` - Add reduction support for new types
+- `src/core/substitution.c` - Add substitution support for new types
+
+### 3. ⏳ Compatibility Updates for Other Files
+
+**May need to update:**
+- Domain-specific code (manufacturing, etc.) may need to adapt to new types
+- Runtime code may need to handle new types
+
+### 4. ⏳ Compilation and Testing
+
+- Need to fix all compilation errors
+- Need to verify correctness of new features
+- Need to perform integration testing
+
+## Implemented Core Features
+
+### Universe Level System
+
+According to Kos.tex document definition, implemented:
+
+1. **Dual-Axis Structure**
+   - Computational axis (U_i): `UNIVERSE_COMPUTATIONAL`
+   - Logical axis (Type_i): `UNIVERSE_LOGICAL`
+
+2. **Level Relationships**
+   - Prop : Type_1
+   - Type_i : Type_{i+1}
+   - U_i : U_{i+1}
+   - U_i : Type_{i+1} (through Lifting rule)
+
+3. **Universe Lifting Rules**
+   - U_i : Type_{i+1} (computational axis can be promoted to logical axis)
+   - Prop ↪ U_1 (propositions can be embedded into data axis)
+
+4. **Type Construction Rules**
+   - Σ type: U_max(i,j) rule
+   - Π type: Type_max(i,j) rule (or Impredicative rule)
+
+## Code Quality
+
+- ✅ All new code follows existing code style
+- ✅ Added appropriate comments
+- ✅ Maintained compatibility with existing code (by initializing universe field to default values)
+
+## Next Steps
+
+1. **Immediate need**: Update type checker to support Universe level verification
+2. **Important**: Update reduction and substitution systems
+3. **Necessary**: Fix compilation errors and perform testing
+4. **Recommended**: Add unit tests to verify correctness of Universe level system
+
+## Notes
+
+- Current implementation is basic, some advanced features (such as complete dependent type checking, context handling) may need further refinement
+- Complete integration of Universe level system requires type checker support
+- Recommend comprehensive testing after completing type checker updates
 
 
 
