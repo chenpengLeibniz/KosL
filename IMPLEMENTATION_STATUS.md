@@ -1,4 +1,11 @@
-# 类型系统重构实现状态
+# 类型系统重构实现状态 / Type System Refactoring Implementation Status
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 已完成的工作
 
@@ -72,12 +79,84 @@
 3. **类型实例化需要类型检查**：必须通过 `kos_check` 验证
 4. **不存在C语言结构体定义的类型**：所有类型都通过类型构造器构造
 
+---
 
+<a name="english"></a>
+## English
 
+# Type System Refactoring Implementation Status
 
+## Completed Work
 
+### 1. Header File Refactoring ✅
+- ✅ Refactored `include/kos_ontology.h`
+  - Removed C language struct definitions (`AtomicTypeDef`, `PredicateTypeDef`, `EventTypeDef`)
+  - New design based on type constructors (Π, Σ, Sum, etc.)
+  - All type definitions are `kos_term*` types
 
+### 2. Implementation File Refactoring ✅
+- ✅ Refactored `src/core/ontology_manager.c`
+  - Implemented type ontology management based on type construction
+  - Implemented CRUD operations for type definitions
+  - Implemented type instantiation and verification (through type checking)
+  - Implemented persistence storage framework (serialization/deserialization needs further improvement)
 
+### 3. Documentation ✅
+- ✅ Created type construction example documentation (`TYPE_CONSTRUCTION_EXAMPLES.md`)
+- ✅ Created API design documentation (`TYPE_CONSTRUCTION_API.md`)
+- ✅ Created refactoring plan documentation (`TYPE_SYSTEM_REFACTORING_PLAN.md`)
+
+## Pending Work
+
+### 1. Domain Code Updates ⏳
+Need to update the following files to use the new type system:
+
+- ⏳ `include/kos_manufacturing.h`
+  - Remove references to `AtomicTypeDef`, `PredicateTypeDef`, `EventTypeDef`
+  - Update function signatures to use new type system
+
+- ⏳ `src/domain/manufacturing/ontology_setup.c`
+  - Use type constructors to construct type definitions
+  - Use new API to add type definitions
+
+- ⏳ `src/domain/manufacturing/ontology_crud.c`
+  - Update to use new type definition API
+  - Remove calls to old API
+
+- ⏳ `src/domain/manufacturing/types.c`
+  - Update type construction code
+  - Use type checking to verify instances
+
+### 2. Serialization/Deserialization Improvement ⏳
+- ⏳ Improve `kos_ontology_serialize` function (basic framework already implemented)
+- ⏳ Implement `kos_ontology_deserialize` function (needs complete JSON parsing)
+
+### 3. Type Checking Integration ⏳
+- ⏳ Ensure type checker (`kos_check`) can correctly handle all type constructions
+- ⏳ Add error reporting mechanism for type checking
+
+## Current Compilation Status
+
+The following errors will occur during compilation:
+1. `kos_manufacturing.h` still uses old type definitions
+2. `ontology_crud.c` still uses old API
+3. `TypeOntology` structure has changed, no longer has fields like `atomic_count`
+
+These errors are expected because domain code has not been updated yet.
+
+## Next Steps
+
+1. **Temporarily disable related code**: Comment out code using old API to make project compilable
+2. **Gradual migration**: Migrate files one by one to new type system
+3. **Add examples**: Add complete usage examples for new type system
+4. **Test verification**: Ensure type construction and type checking work correctly
+
+## Design Principles
+
+1. **All types are products of type construction**: Constructed through Π types, Σ types, Sum types, etc.
+2. **Type definitions are `kos_term*`**: Type definitions themselves are terms in the type system
+3. **Type instantiation requires type checking**: Must be verified through `kos_check`
+4. **No C language struct-defined types**: All types are constructed through type constructors
 
 
 

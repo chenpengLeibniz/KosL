@@ -1,4 +1,11 @@
-# 代码迁移状态
+# 代码迁移状态 / Code Migration Status
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 已完成
 
@@ -43,12 +50,55 @@
 2. 或者完全重写 `ontology_crud.c` 以使用新的API
 3. 更新所有类型构造函数以使用新的类型系统
 
+---
 
+<a name="english"></a>
+## English
 
+# Code Migration Status
 
+## Completed
 
+1. ✅ **Core Type System Refactoring**
+   - `include/kos_ontology.h` - Refactored to type construction-based design
+   - `src/core/ontology_manager.c` - Implemented type ontology management based on type construction
 
+2. ✅ **Type Ontology Initialization**
+   - `src/domain/manufacturing/ontology_setup.c` - Updated to use type constructors to construct type definitions
 
+3. ✅ **Documentation**
+   - Type construction example documentation
+   - API design documentation
+   - Migration guide
+
+## Pending
+
+1. ⏳ **`include/kos_manufacturing.h`**
+   - Old API function declarations are commented out
+   - Need to add new API function declarations based on type construction
+
+2. ⏳ **`src/domain/manufacturing/ontology_crud.c`**
+   - Needs complete rewrite to use new type definition API
+   - Current file still uses old API
+
+3. ⏳ **`src/domain/manufacturing/types.c`**
+   - Partially updated (BatchID function)
+   - Need to update all type constructor functions
+
+4. ⏳ **Other Related Files**
+   - `predicates.c`, `traceability.c`, `runtime_elab.c` may need updates
+
+## Current Compilation Status
+
+Compilation will produce errors because:
+- `ontology_crud.c` still uses commented-out old API functions
+- Some type constructor functions need updates
+
+## Next Steps
+
+1. Temporarily disable or comment out old code in `ontology_crud.c`
+2. Or completely rewrite `ontology_crud.c` to use new API
+3. Update all type constructor functions to use new type system
 
 
 

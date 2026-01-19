@@ -1,4 +1,11 @@
-# 类型系统重构实现总结
+# 类型系统重构实现总结 / Type System Refactoring Implementation Summary
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 已完成的工作
 
@@ -124,3 +131,135 @@ kos_ontology_add_type_definition(ontology, "InRoute", in_route_type, NULL);
 ## 成就
 
 这次重构成功地将类型系统从基于C语言结构体的设计迁移到了基于类型论的设计，完全符合直觉类型论（ITT）的原则。所有类型定义现在都通过类型构造器构造，类型实例化必须通过类型检查验证，这确保了类型系统的正确性和一致性。
+
+---
+
+<a name="english"></a>
+## English
+
+# Type System Refactoring Implementation Summary
+
+## Completed Work
+
+### 1. Core Type System Refactoring ✅
+
+#### Header File Refactoring
+- ✅ `include/kos_ontology.h`
+  - Removed C language struct definitions (`AtomicTypeDef`, `PredicateTypeDef`, `EventTypeDef`)
+  - New design based on type constructors (Π, Σ, Sum, etc.)
+  - All type definitions are `kos_term*` types
+  - Added `TypeDefinition` structure to store type definition name, type definition (kos_term*), and context
+
+#### Implementation File Refactoring
+- ✅ `src/core/ontology_manager.c`
+  - Completely rewritten, implemented type ontology management based on type construction
+  - Implemented CRUD operations for type definitions (add, find, update, delete)
+  - Implemented type instantiation and verification (through type checking)
+  - Implemented persistence storage framework (serialization/deserialization)
+
+### 2. Domain Code Partial Updates ✅
+
+#### Type Ontology Initialization
+- ✅ `src/domain/manufacturing/ontology_setup.c`
+  - Updated to use type constructors to construct type definitions
+  - Used `kos_mk_sigma` to construct event types (FailEvt, ProcStep, Anomaly)
+  - Used `kos_mk_pi` to construct predicate types (InRoute, Overlap)
+  - Used basic Sorts (`kos_mk_id`, `kos_mk_time`, `kos_mk_prop`) to construct basic types
+
+#### Header File Updates
+- ✅ `include/kos_manufacturing.h`
+  - Commented out old API function declarations (awaiting migration)
+  - Added TODO notes to guide subsequent migration
+
+#### Type Builder Partial Updates
+- ✅ `src/domain/manufacturing/types.c`
+  - Updated `kos_mk_batch_id` function to use new type system
+
+### 3. Documentation ✅
+
+- ✅ `TYPE_CONSTRUCTION_EXAMPLES.md` - Detailed type construction examples and code
+- ✅ `TYPE_CONSTRUCTION_API.md` - Complete API design documentation
+- ✅ `TYPE_SYSTEM_REFACTORING_PLAN.md` - Refactoring plan
+- ✅ `MANUFACTURING_MIGRATION_GUIDE.md` - Migration guide
+- ✅ `CODE_MIGRATION_STATUS.md` - Migration status
+- ✅ `IMPLEMENTATION_STATUS.md` - Implementation status
+
+## Core Design Points
+
+### Type Theory Principles
+
+1. **All types are products of type construction**
+   - Constructed through Π types, Σ types, Sum types, etc.
+   - No predefined C language struct types
+
+2. **Type definitions are `kos_term*` types**
+   - Type definitions themselves are terms in the type system
+   - Stored in `TypeDefinition` structure
+
+3. **Type instantiation requires type checking**
+   - Must be verified through `kos_check` or `kos_type_check`
+   - Only instances that pass type checking are valid
+
+### Type Construction Examples
+
+#### Event Type (Σ Type)
+```c
+// FailEvt ≡ Σ(b: BatchID). Σ(err: ErrorCode). Σ(t: Time). Prop
+kos_term* time_prop_sigma = kos_mk_sigma(time_type, prop_type);
+kos_term* error_time_prop_sigma = kos_mk_sigma(error_code_type, time_prop_sigma);
+kos_term* fail_evt_type = kos_mk_sigma(batch_id_type, error_time_prop_sigma);
+kos_ontology_add_type_definition(ontology, "FailEvt", fail_evt_type, NULL);
+```
+
+#### Predicate Type (Π Type)
+```c
+// InRoute ≡ Π(b: BatchID). Π(m: Machine). Prop
+kos_term* machine_prop_pi = kos_mk_pi(machine_type, prop_type);
+kos_term* in_route_type = kos_mk_pi(batch_id_type, machine_prop_pi);
+kos_ontology_add_type_definition(ontology, "InRoute", in_route_type, NULL);
+```
+
+## Pending Work
+
+### 1. Domain Code Migration ⏳
+
+#### `src/domain/manufacturing/ontology_crud.c`
+- Needs complete rewrite to use new type definition API
+- Currently still uses old API (commented out)
+
+#### `src/domain/manufacturing/types.c`
+- Needs to update all type constructor functions
+- Currently only `kos_mk_batch_id` is updated
+
+#### `include/kos_manufacturing.h`
+- Needs to add new API function declarations based on type construction
+- Old API functions are commented out, awaiting migration
+
+### 2. Serialization/Deserialization Improvement ⏳
+
+- `kos_ontology_serialize` function has basic framework implemented but needs improvement
+- `kos_ontology_deserialize` function needs complete JSON parsing implementation
+
+### 3. Type Checking Integration ⏳
+
+- Ensure type checker (`kos_check`) can correctly handle all type constructions
+- Add error reporting mechanism for type checking
+
+## Current Compilation Status
+
+The following errors will occur during compilation:
+1. `ontology_crud.c` still uses commented-out old API functions
+2. Some type constructor functions need updates
+
+These errors are expected because domain code migration is still in progress.
+
+## Next Steps
+
+1. **Temporarily disable related code**: Comment out code in `ontology_crud.c` using old API
+2. **Gradual migration**: Migrate files one by one to new type system
+3. **Add tests**: Add unit tests for new type system
+4. **Improve documentation**: Add more usage examples and best practices
+
+## Achievement
+
+This refactoring successfully migrated the type system from a C language struct-based design to a type theory-based design, fully conforming to Intuitionistic Type Theory (ITT) principles. All type definitions are now constructed through type constructors, and type instantiation must be verified through type checking, ensuring the correctness and consistency of the type system.
