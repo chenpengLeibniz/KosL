@@ -1,4 +1,11 @@
-# `kos_universe_leq()` 函数使用分析
+# `kos_universe_leq()` 函数使用分析 / `kos_universe_leq()` Function Usage Analysis
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 函数定义
 
@@ -179,10 +186,191 @@ kos_universe_leq()  ← 唯一调用点
 
 这个函数虽然只在一个地方被调用，但它是类型检查系统中处理 Universe 层级关系的**关键函数**，确保了双轴世界的类型系统能够正确工作。
 
+---
 
+<a name="english"></a>
+## English
 
+# `kos_universe_leq()` Function Usage Analysis
 
+## Function Definition
 
+**Location**: `src/core/universe.c:62`
+
+**Function Signature**:
+```c
+bool kos_universe_leq(universe_info u1, universe_info u2);
+```
+
+**Functionality**:
+- Checks Universe level relationship: `u1 ≤ u2`
+- Supports dual-axis system (computational axis U_i and logical axis Type_i)
+- Implements Universe promotion rules
+
+## Call Location
+
+### Single Call Site: `kos_check()` Function
+
+**Location**: `src/core/type_checker.c:90`
+
+**Call Scenario**: During type checking, when checking Universe types (KOS_U or KOS_TYPE)
+
+**Code Context**:
+```c
+bool kos_check(kos_term* ctx, kos_term* term, kos_term* type) {
+    // ... Get Universe information
+    universe_info term_info = kos_get_universe_info(term);
+    universe_info type_info = kos_get_universe_info(type);
+    
+    // ... Case-by-case checking based on type
+    switch (type->kind) {
+        // ... Other type checks ...
+        
+        case KOS_U:
+        case KOS_TYPE:
+            // Universe type checking: compare Universe levels
+            if (term->kind == type->kind) {
+                // If both are Universe types, directly compare axis and level
+                return (term->data.universe.axis == type->data.universe.axis &&
+                        term->data.universe.level == type->data.universe.level);
+            }
+            // If term is not a Universe type, check if it can be promoted to that Universe level
+            return kos_universe_leq(term_info, type_info);  // ← Single call site
+            
+        // ... Other type checks ...
+    }
+}
+```
+
+## Usage Timing
+
+### Trigger Conditions
+
+`kos_universe_leq()` is called in the following situations:
+
+1. **Target type of type checking is a Universe type** (`type->kind == KOS_U` or `KOS_TYPE`)
+2. **Term being checked is not a Universe type** (`term->kind != KOS_U && term->kind != KOS_TYPE`)
+
+### Specific Scenarios
+
+#### Scenario 1: Check if non-Universe type can be promoted to Universe type
+
+**Example**:
+```c
+// Assume a type definition: Type_1 (logical axis, level 1)
+kos_term* type = kos_mk_universe_logical(1);  // Type_1
+
+// Have a value type: U_0 (computational axis, level 0)
+kos_term* term = kos_mk_val("some_value");  // U_0
+
+// Type checking: term : type?
+bool result = kos_check(NULL, term, type);
+// Internally calls: kos_universe_leq(term_info, type_info)
+// term_info = {UNIVERSE_COMPUTATIONAL, 0}
+// type_info = {UNIVERSE_LOGICAL, 1}
+// Check: Can U_0 be promoted to Type_1?
+// Rule: U_i : Type_{i+1}, so U_0 : Type_1 ✓
+```
+
+#### Scenario 2: Check if basic type can be promoted to Universe type
+
+**Example**:
+```c
+// Type: Type_2 (logical axis, level 2)
+kos_term* type = kos_mk_universe_logical(2);  // Type_2
+
+// Value: BatchID (basic type, inferred as U_0)
+kos_term* term = kos_mk_id("BATCH001");  // U_0
+
+// Type checking
+bool result = kos_check(NULL, term, type);
+// Internally calls: kos_universe_leq({UNIVERSE_COMPUTATIONAL, 0}, {UNIVERSE_LOGICAL, 2})
+// Check: Can U_0 be promoted to Type_2?
+// Rule: U_0 : Type_1, but Type_1 < Type_2, so U_0 : Type_2 ✓
+```
+
+## Implementation Logic
+
+`kos_universe_leq()` implements the following rules:
+
+### 1. Same Axis: Direct Level Comparison
+```c
+if (u1.axis == u2.axis) {
+    return u1.level <= u2.level;
+}
+```
+- `U_0 ≤ U_1` ✓
+- `Type_1 ≤ Type_2` ✓
+- `U_2 ≤ U_1` ✗
+
+### 2. Cross-Axis Promotion: Computational Axis Promoted to Logical Axis
+```c
+if (u1.axis == UNIVERSE_COMPUTATIONAL && u2.axis == UNIVERSE_LOGICAL) {
+    return u1.level + 1 <= u2.level;
+}
+```
+- `U_0 : Type_1` ✓ (0 + 1 = 1 ≤ 1)
+- `U_0 : Type_2` ✓ (0 + 1 = 1 ≤ 2)
+- `U_1 : Type_1` ✓ (1 + 1 = 2 ≤ 1) ✗ Actually should be U_1 : Type_2
+- `U_1 : Type_2` ✓ (1 + 1 = 2 ≤ 2)
+
+### 3. Prop Embedding: Proposition Embedded into Data Axis
+```c
+if (u1.axis == UNIVERSE_LOGICAL && u1.level == 1 && 
+    u2.axis == UNIVERSE_COMPUTATIONAL && u2.level == 1) {
+    return true;
+}
+```
+- `Prop : U_1` ✓
+
+## Call Chain
+
+```
+Runtime event elaboration (runtime_elab.c)
+    ↓
+kos_ontology_mk_type_instance()
+    ↓
+kos_check()  ← Core type checking
+    ↓
+case KOS_U / KOS_TYPE:
+    ↓
+kos_universe_leq()  ← Single call site
+```
+
+## Practical Applications
+
+### Application in Type Checking
+
+When the system performs type checking, if it encounters the following situations:
+
+1. **Check if a basic type value conforms to a Universe type**
+   - Example: Check if `BatchID` value conforms to `Type_1` type
+   - System will call `kos_universe_leq()` to determine if promotion is possible
+
+2. **Check if a composite type conforms to a Universe type**
+   - Example: Check if `Σ(x:A).B` type conforms to `Type_2` type
+   - System will get Universe information of composite type, then call `kos_universe_leq()` to determine
+
+### Role in Dual-Axis System
+
+`kos_universe_leq()` is the core mechanism of the Dual-Axis Universe System:
+
+- **Computational Axis (U_i)**: Used for computational data
+- **Logical Axis (Type_i)**: Used for logical types
+- **Promotion Rule**: `U_i : Type_{i+1}` (computational axis can be promoted to logical axis)
+
+This function ensures that cross-axis Universe level relationships can be correctly handled during type checking.
+
+## Summary
+
+The `kos_universe_leq()` function:
+
+1. **Single Call Site**: In `kos_check()` function, when checking Universe types
+2. **Trigger Condition**: Target type is a Universe type, but the term being checked is not a Universe type
+3. **Purpose**: Determines if a type's Universe level can be promoted to another Universe level
+4. **Importance**: Core mechanism of dual-axis system type checking, ensuring correct application of type promotion rules
+
+Although this function is only called in one place, it is a **key function** in the type checking system for handling Universe level relationships, ensuring the dual-axis world's type system can work correctly.
 
 
 
