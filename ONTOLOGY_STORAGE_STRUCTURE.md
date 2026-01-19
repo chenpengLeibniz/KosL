@@ -264,3 +264,18 @@ void kos_ontology_free(TypeOntology* ontology) {
 
 这种设计在类型数量适中（数百到数千）时非常高效，既保证了内存局部性，又提供了简单的实现。
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,41 @@
+.status-bar {
+    height: 22px;
+    background: #007acc;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.status-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-item {
+    color: #ffffff;
+}
+
+.status-error {
+    color: #f48771;
+    font-weight: 600;
+}
+
+.status-clickable {
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.status-clickable:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+

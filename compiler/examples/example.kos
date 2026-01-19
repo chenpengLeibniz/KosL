@@ -1,0 +1,63 @@
+-- KOS-TL 示例程序
+-- 金融领域交易事件处理
+
+module Finance where
+
+import Core
+
+-- 类型声明
+type AccountID : U₁
+type TransactionID : U₁
+type Amount : U₁
+type Currency : U₁
+type Time : U₁
+
+-- 依赖类型：交易事件
+type TransactionEvent : Type₁
+  = Σ(tx_id : TransactionID)
+    Σ(from : AccountID)
+    Σ(to : AccountID)
+    Σ(amt : Amount)
+    Σ(curr : Currency)
+    Σ(t : Time)
+    Prop
+
+-- 函数定义
+def isHighValue : Π(tx : TransactionEvent) → Prop
+  = λ(tx : TransactionEvent) → 
+    (tx.amt > 100000)
+
+-- 证明构造
+def highValueProof : Π(tx : TransactionEvent) → 
+                     Π(p : isHighValue tx) → Prop
+  = λ(tx : TransactionEvent) → 
+    λ(p : isHighValue tx) → 
+      p
+
+-- 模式匹配示例
+def analyzeTransaction : TransactionEvent → Result
+  = λ(tx : TransactionEvent) →
+    match tx with
+    | <tx_id, from, to, amt, curr, t, _> →
+        if amt > 100000 then
+          Suspicious "High value transaction"
+        else if from.country ≠ to.country then
+          Suspicious "Cross-border transaction"
+        else
+          Normal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

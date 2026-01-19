@@ -1,0 +1,98 @@
+{
+  "name": "kos-tl-ide",
+  "version": "0.1.0",
+  "description": "Integrated Development Environment for KOS-TL Language",
+  "main": "dist/main/main.js",
+  "author": "KOS-TL Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:main": "tsc -w -p main/tsconfig.json",
+    "dev:renderer": "webpack serve --config renderer/webpack.config.js",
+    "build": "npm run clean && npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p main/tsconfig.json",
+    "build:renderer": "cross-env NODE_ENV=production webpack --config renderer/webpack.config.js --mode production",
+    "clean": "rimraf dist",
+    "package": "npm run build && electron-builder",
+    "package:win": "npm run build && electron-builder --win",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:linux": "npm run build && electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.44.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.6.4",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0",
+    "wait-on": "^7.0.1",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0",
+    "html-webpack-plugin": "^5.5.0",
+    "ts-loader": "^9.4.0",
+    "css-loader": "^6.8.0",
+    "style-loader": "^3.3.0"
+  },
+  "build": {
+    "appId": "com.kos-tl.ide",
+    "productName": "KOS-TL IDE",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraFiles": [],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ],
+      "sign": null,
+      "signingHashAlgorithms": [],
+      "certificateFile": null,
+      "certificatePassword": null,
+      "verifyUpdateCodeSignature": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
+

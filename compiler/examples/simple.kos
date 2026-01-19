@@ -1,0 +1,4 @@
+-- 简单的测试文件
+module Test where
+
+type MyType : U₁

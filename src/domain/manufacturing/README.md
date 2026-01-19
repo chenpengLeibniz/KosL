@@ -106,3 +106,18 @@ kos_term* event = kos_elab_failure_event(raw_data, NULL);
 kos_manufacturing_ontology_release();
 ```
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

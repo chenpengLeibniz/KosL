@@ -110,3 +110,18 @@ kos_term* instance = kos_ontology_mk_type_instance(ontology, "FailEvt", fail_evt
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

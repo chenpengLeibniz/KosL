@@ -352,3 +352,18 @@ kos_term* kos_ontology_mk_type_instance(TypeOntology* ontology,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -206,3 +206,18 @@ int kos_manufacturing_ontology_add_extended_types(TypeOntology* ontology) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -68,3 +68,18 @@ bool kos_check_causal_validity(CausalProof* proof) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

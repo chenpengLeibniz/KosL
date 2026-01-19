@@ -1,0 +1,101 @@
+{
+  "name": "kos-tl",
+  "displayName": "KOS-TL Language Support",
+  "description": "Language support for KOS-TL - A functional dependent type language",
+  "version": "0.1.0",
+  "publisher": "kos-tl",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "kos-tl",
+    "dependent types",
+    "functional programming",
+    "type theory"
+  ],
+  "activationEvents": [
+    "onLanguage:kos-tl"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "kos-tl",
+        "aliases": [
+          "KOS-TL",
+          "kos-tl"
+        ],
+        "extensions": [
+          ".kos"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kos-tl",
+        "scopeName": "source.kos-tl",
+        "path": "./syntaxes/kos-tl.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "kos-tl",
+        "path": "./snippets/kos-tl.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "kos-tl.checkType",
+        "title": "Check Type",
+        "category": "KOS-TL"
+      },
+      {
+        "command": "kos-tl.compile",
+        "title": "Compile to C",
+        "category": "KOS-TL"
+      }
+    ],
+    "configuration": {
+      "title": "KOS-TL",
+      "properties": {
+        "kos-tl.compilerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to KOS-TL compiler executable"
+        },
+        "kos-tl.enableTypeChecking": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time type checking"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "^16.0.0",
+    "typescript": "^4.5.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.0.0",
+    "vscode-languageserver": "^8.0.0",
+    "vscode-languageserver-textdocument": "^1.0.4"
+  }
+}
+
+
+
+
+

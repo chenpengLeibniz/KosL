@@ -78,3 +78,18 @@ size_t kos_manufacturing_ontology_get_type_count(void) {
     return g_manufacturing_ontology->type_count;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

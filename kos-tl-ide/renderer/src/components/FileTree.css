@@ -1,0 +1,52 @@
+.file-tree {
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+.file-tree-node {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: #cccccc;
+    user-select: none;
+}
+
+.file-tree-node:hover {
+    background: #2a2d2e;
+}
+
+.file-tree-node.directory {
+    font-weight: 500;
+}
+
+.file-tree-node.file {
+    color: #cccccc;
+}
+
+.file-tree-icon {
+    margin-right: 6px;
+    font-size: 14px;
+    width: 16px;
+    display: inline-block;
+    text-align: center;
+}
+
+.file-tree-name {
+    flex: 1;
+}
+
+.file-tree-children {
+    margin-left: 0;
+}
+
+.file-tree-empty {
+    padding: 20px;
+    text-align: center;
+    color: #858585;
+}
+
+
+
+
+

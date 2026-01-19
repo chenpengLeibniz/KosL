@@ -1,0 +1,75 @@
+.command-palette-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 100px;
+    z-index: 10000;
+}
+
+.command-palette {
+    width: 600px;
+    background: #252526;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.command-palette-input {
+    width: 100%;
+    padding: 12px;
+    background: #1e1e1e;
+    border: none;
+    border-bottom: 1px solid #3e3e42;
+    color: #cccccc;
+    font-size: 14px;
+    outline: none;
+}
+
+.command-palette-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.command-palette-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #cccccc;
+}
+
+.command-palette-item:hover,
+.command-palette-item.selected {
+    background: #2a2d2e;
+}
+
+.command-label {
+    flex: 1;
+    font-size: 13px;
+}
+
+.command-category {
+    font-size: 11px;
+    color: #858585;
+    margin-left: 12px;
+}
+
+.command-palette-empty {
+    padding: 20px;
+    text-align: center;
+    color: #858585;
+    font-size: 13px;
+}
+
+
+
+
+

@@ -123,3 +123,18 @@ int kos_manufacturing_ontology_save(TypeOntology* ontology) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

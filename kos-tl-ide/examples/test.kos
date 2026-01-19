@@ -1,0 +1,24 @@
+-- 测试 KOS-TL 文件
+module Test where
+
+-- 定义一个简单的类型
+type Nat : U₁
+  = Zero
+  | Succ Nat
+
+-- 定义一个函数
+def add : Nat → Nat → Nat
+  = λ x → λ y →
+    match x with
+    | Zero → y
+    | Succ n → Succ (add n y)
+
+-- 使用示例
+def two : Nat = Succ (Succ Zero)
+def three : Nat = Succ (Succ (Succ Zero))
+def five : Nat = add two three
+
+
+
+
+

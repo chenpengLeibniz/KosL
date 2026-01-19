@@ -469,3 +469,18 @@ TypeOntology* kos_ontology_deserialize(const char* json_str) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

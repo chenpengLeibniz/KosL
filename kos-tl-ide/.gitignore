@@ -1,0 +1,16 @@
+node_modules/
+dist/
+out/
+release/
+*.log
+.DS_Store
+*.vsix
+.vscode-test/
+*.exe
+*.dmg
+*.AppImage
+*.zip
+*.tar.gz
+build/
+.cache/
+.parcel-cache/
