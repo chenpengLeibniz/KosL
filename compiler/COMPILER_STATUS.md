@@ -1,4 +1,11 @@
-# KOS-TL 编译器实现状态
+# KOS-TL 编译器实现状态 / KOS-TL Compiler Implementation Status
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 总体进度
 
@@ -149,7 +156,160 @@ compiler/
 3. 改进错误处理和诊断
 4. 性能优化
 
+---
 
+<a name="english"></a>
+## English
 
+# KOS-TL Compiler Implementation Status
+
+## Overall Progress
+
+✅ **Compiler core functionality completed**
+
+## Completed Components
+
+### 1. Lexer ✅
+- [x] Token type definitions
+- [x] Keyword recognition
+- [x] Identifier and literal recognition
+- [x] Operator recognition (including Unicode symbols)
+- [x] Comment handling (single-line and multi-line)
+- [x] Error handling and position tracking
+- [x] File reading support
+
+### 2. Parser ✅
+- [x] AST node type definitions
+- [x] Expression parsing (variables, literals, Lambda, application, Let, If, etc.)
+- [x] Type expression parsing
+- [x] Declaration parsing (type, def)
+- [x] Module parsing
+- [x] Precedence and associativity handling
+- [x] Error recovery mechanism
+- [x] AST visualization tool
+- [x] **Fix: AST nodes now correctly store type expressions and function bodies**
+
+### 3. Type Checker ✅
+- [x] Type environment management
+- [x] Bidirectional type checking (check mode and infer mode)
+- [x] Type inference algorithm
+- [x] Universe level checking
+- [x] AST to kos_term conversion
+- [x] Type equality and compatibility checking
+- [x] Dependent type support
+- [x] **Improvement: Complete type checking for type declarations and function definitions**
+
+### 4. Code Generator ✅
+- [x] AST to C code conversion framework
+- [x] Expression code generation
+- [x] Function definition generation
+- [x] Type declaration generation
+- [x] Module code generation
+- [x] File header and footer generation
+- [x] **Improvement: Extract types and function bodies from AST for code generation**
+
+### 5. Compiler Main Program ✅
+- [x] Command line argument parsing
+- [x] File I/O handling
+- [x] Complete compilation pipeline integration
+- [x] Error handling and reporting
+- [x] Type checking mode (-t option)
+
+## Recently Fixed Issues
+
+### AST Structure Improvements
+1. **Parser Fix**: `parser_parse_def` now correctly stores type expressions and function bodies in AST nodes
+2. **Parser Fix**: `parser_parse_type_decl` now correctly stores type expressions
+3. **Type Checker Improvement**: `type_checker_check_decl` can now extract types and function bodies from AST for complete checking
+4. **Code Generator Improvement**: `codegen_def` and `codegen_type_decl` can now extract information from AST to generate code
+5. **Memory Management**: AST node deallocation functions now correctly handle AST_TYPE_DECL and AST_DEF
+
+## Current Functionality
+
+The compiler can now:
+- ✅ Parse KOS-TL source code
+- ✅ Perform complete type checking
+- ✅ Generate C code (basic functionality)
+- ✅ Handle type declarations and function definitions
+
+## Pending Improvements
+
+### Short-term Improvements
+- [ ] Improve Lambda expression code generation
+- [ ] Support more expression types (Match, Pair, etc.)
+- [ ] Improve error message detail
+- [ ] Support Universe subscript parsing (U₁, Type₁, etc.)
+
+### Medium-term Improvements
+- [ ] Code optimization
+- [ ] Debug information generation
+- [ ] Incremental compilation support
+- [ ] Better error recovery
+
+### Long-term Improvements
+- [ ] Complete standard library support
+- [ ] Module system improvements
+- [ ] Proof assistance functionality
+- [ ] IDE integration (LSP)
+
+## Test Status
+
+- [x] Lexer tests
+- [x] Parser tests
+- [x] Type checker tests (basic)
+- [ ] End-to-end compilation tests
+- [ ] Performance tests
+
+## Build and Usage
+
+### Build
+```bash
+cd compiler
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+### Usage
+```bash
+# Compile KOS-TL file
+./bin/kos-tl-compiler example.kos -o example.c
+
+# Type checking only
+./bin/kos-tl-compiler example.kos -t
+```
+
+## File Structure
+
+```
+compiler/
+├── src/
+│   ├── compiler/
+│   │   ├── lexer.c          ✅
+│   │   ├── parser.c        ✅ (fixed)
+│   │   ├── type_checker.c  ✅ (improved)
+│   │   └── codegen.c       ✅ (improved)
+│   └── main.c              ✅
+├── include/
+│   └── compiler/
+│       ├── lexer.h
+│       ├── parser.h
+│       ├── type_checker.h
+│       └── codegen.h
+├── tests/
+│   ├── test_lexer.c
+│   ├── test_parser.c
+│   └── test_type_checker.c
+└── examples/
+    └── example.kos
+```
+
+## Next Steps
+
+1. Create end-to-end test cases
+2. Improve code generation to support more KOS-TL features
+3. Improve error handling and diagnostics
+4. Performance optimization
 
 
