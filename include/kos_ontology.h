@@ -46,6 +46,16 @@ int kos_ontology_add_type_definition(TypeOntology* ontology,
                                      kos_term* type_def,
                                      kos_term* ctx);
 
+// 从 .kos 源字符串添加类型定义（经 kos-core 形式化校验，非法类型不能创建）
+// kos_type_expr: .kos 类型表达式，如 "Prop P" 或 "Σ(b: Prop). Prop"
+// 返回 0 成功，-1 失败（校验失败或已存在）；errmsg 可接收错误信息
+int kos_ontology_add_type_from_kos(TypeOntology* ontology,
+                                   const char* name,
+                                   const char* kos_type_expr,
+                                   kos_term* ctx,
+                                   char* errmsg,
+                                   size_t errmsg_size);
+
 // 查找类型定义（返回类型定义的 kos_term*）
 kos_term* kos_ontology_find_type_definition(TypeOntology* ontology, const char* name);
 

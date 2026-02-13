@@ -1,0 +1,234 @@
+-- ============================================
+-- CoC 完整语法特点展示
+-- ============================================
+-- 本文件展示了 CoC 类型检查器支持的所有语法特性
+
+-- ============================================
+-- 1. 基础类型声明：Axiom
+-- ============================================
+-- Axiom 用于声明未定义的常量（类型或值）
+axiom Nat : Type
+axiom Bool : Type
+axiom true : Bool
+axiom false : Bool
+axiom zero : Nat
+axiom succ : Nat -> Nat
+
+-- ============================================
+-- 2. 归纳类型：Inductive
+-- ============================================
+-- 2.1 简单归纳类型（无参数）
+inductive Unit : Type with
+  | unit : Unit
+
+-- 2.2 带参数的归纳类型
+inductive List (A : Type) : Type with
+  | nil : List A
+  | cons : A -> List A -> List A
+
+-- 2.3 多构造子的归纳类型
+inductive Option (A : Type) : Type with
+  | none : Option A
+  | some : A -> Option A
+
+-- ============================================
+-- 3. 结构类型：Structure
+-- ============================================
+-- Structure 是单构造子归纳类型的语法糖
+structure Point : Type :=
+  (x : Nat)
+  (y : Nat)
+
+structure Pair (A : Type) (B : Type) : Type :=
+  (fst : A)
+  (snd : B)
+
+-- ============================================
+-- 4. 函数定义：Definition
+-- ============================================
+-- 4.1 简单函数（显式参数）
+def identity (A : Type) (x : A) : A := x
+
+def add (x : Nat) (y : Nat) : Nat :=
+  -- 函数体可以是任意表达式
+  x
+
+-- 4.2 隐式参数（使用花括号 { }）
+def id {A : Type} (x : A) : A := x
+
+def const {A : Type} {B : Type} (x : A) (y : B) : A := x
+
+-- 4.3 混合显式和隐式参数
+def compose {A : Type} {B : Type} {C : Type}
+            (g : B -> C) (f : A -> B) (x : A) : C :=
+  g (f x)
+
+-- ============================================
+-- 5. 依赖类型：Dependent Types
+-- ============================================
+-- 5.1 依赖函数类型 (x : A) -> B x
+-- 注意：CoC 支持依赖函数类型，但语法可能有限制
+def apply_dependent (A : Type) (B : A -> Type) (x : A) (f : (y : A) -> B y) : B x :=
+  f x
+
+-- 5.2 依赖类型示例：类型依赖于值
+def vec_example : (n : Nat) -> List Nat :=
+  fun n : Nat => nil Nat
+
+-- ============================================
+-- 6. 模式匹配：Pattern Matching
+-- ============================================
+-- 6.1 简单模式匹配
+def is_zero (n : Nat) : Bool :=
+  match n with
+  case zero => true
+  case succ(_) => false
+
+-- 6.2 带绑定的模式匹配
+def pred (n : Nat) : Nat :=
+  match n with
+  case zero => zero
+  case succ(m) => m
+
+-- 6.3 嵌套模式匹配
+def head (A : Type) (l : List A) : Option A :=
+  match l with
+  case nil => none A
+  case cons(x, xs) => some A x
+
+-- ============================================
+-- 7. Let 绑定：Local Definitions
+-- ============================================
+-- 7.1 带类型注解的 let
+def let_example : Nat :=
+  let x : Nat := zero in
+  let y : Nat := succ x in
+  y
+
+-- 7.2 类型推断的 let
+def let_inferred : Nat :=
+  let x := zero in
+  let y := succ x in
+  y
+
+-- 7.3 嵌套 let
+def nested_let : Nat :=
+  let f := id in
+  let g := compose succ succ in
+  g (f zero)
+
+-- ============================================
+-- 8. Lambda 抽象：Anonymous Functions
+-- ============================================
+-- 8.1 简单 lambda
+def lambda_simple : Nat -> Nat :=
+  fun x : Nat => succ x
+
+-- 8.2 多参数 lambda
+def lambda_multi : Nat -> Nat -> Nat :=
+  fun x : Nat => fun y : Nat => x
+
+-- 8.3 Lambda 与依赖类型
+def lambda_dependent : (x : Nat) -> List Nat :=
+  fun x : Nat => cons Nat x (nil Nat)
+
+-- ============================================
+-- 9. 结构投影：Structure Projection
+-- ============================================
+def point_x : Nat :=
+  let p : Point := Point.mk zero (succ zero) in
+  p.x
+
+def point_y : Nat :=
+  let p : Point := Point.mk zero (succ zero) in
+  p.y
+
+-- ============================================
+-- 10. 高阶函数：Higher-Order Functions
+-- ============================================
+-- 10.1 函数作为参数
+def apply_twice {A : Type} (f : A -> A) (x : A) : A :=
+  f (f x)
+
+-- 10.2 函数作为返回值
+def const_fun {A : Type} (x : A) : (B : Type) -> B -> A :=
+  fun (B : Type) => fun (y : B) => x
+
+-- 10.3 函数组合
+def compose_self {A : Type} (f : A -> A) : A -> A :=
+  compose f f
+
+-- ============================================
+-- 11. 多态函数：Polymorphic Functions
+-- ============================================
+-- 11.1 显式类型参数
+def map_explicit (A : Type) (B : Type) (f : A -> B) (l : List A) : List B :=
+  match l with
+  case nil => nil B
+  case cons(x, xs) => cons B (f x) (map_explicit A B f xs)
+
+-- 11.2 隐式类型参数
+def map_implicit {A : Type} {B : Type} (f : A -> B) (l : List A) : List B :=
+  match l with
+  case nil => nil B
+  case cons(x, xs) => cons B (f x) (map_implicit f xs)
+
+-- ============================================
+-- 12. 递归函数：Recursive Functions
+-- ============================================
+-- 注意：CoC 中的递归需要特殊处理，这里展示语法
+def length {A : Type} (l : List A) : Nat :=
+  match l with
+  case nil => zero
+  case cons(x, xs) => succ (length xs)
+
+-- ============================================
+-- 13. 类型应用：Type Application
+-- ============================================
+-- 13.1 显式类型应用
+def empty_nat_list : List Nat := nil Nat
+
+def nat_cons : List Nat -> Nat -> List Nat := cons Nat
+
+-- 13.2 隐式类型推断
+def empty_list : List Nat := nil
+
+-- ============================================
+-- 14. 复杂组合示例
+-- ============================================
+-- 14.1 组合多种特性
+def complex_example {A : Type} {B : Type} (f : A -> B) (l : List A) : List B :=
+  let mapper := map_implicit f in
+  let result := mapper l in
+  result
+
+-- 14.2 依赖类型与模式匹配
+def dependent_match {A : Type} (l : List A) : Option A :=
+  match l with
+  case nil => none A
+  case cons(x, xs) => some A x
+
+-- 14.3 结构体与投影
+def point_operations : Nat :=
+  let p : Point := Point.mk (succ zero) (succ (succ zero)) in
+  let sum : Nat := p.x in  -- 简化示例
+  sum
+
+-- ============================================
+-- 15. 类型别名和复杂类型
+-- ============================================
+-- 通过定义实现类型别名
+def NatList : Type := List Nat
+
+def NatPair : Type := Pair Nat Nat
+
+-- ============================================
+-- 语法总结
+-- ============================================
+-- 1. 声明：axiom, def, inductive, structure
+-- 2. 参数：显式 (x : T) 和隐式 {x : T}
+-- 3. 类型：Type, Prop, Sort, Pi (->)
+-- 4. 表达式：Var, App, Abs (fun), Let, Match, Constructor, Proj (.)
+-- 5. 模式：Var, Constructor, Wildcard (_)
+-- 6. 操作：函数应用、结构投影、模式匹配
+-- 7. 特性：依赖类型、多态、高阶函数、隐式参数推断

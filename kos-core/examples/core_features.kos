@@ -1,0 +1,10 @@
+-- KosCore completion items demo: Id, Let, def, Conversion
+
+module CoreFeatures where
+
+type T : Type1
+
+def p : T := Prop P
+def q : T := p
+
+def reflExample : Id(T, Prop P, Prop P) := refl (Prop P)

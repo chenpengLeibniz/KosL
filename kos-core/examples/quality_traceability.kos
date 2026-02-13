@@ -1,0 +1,148 @@
+-- KOS-TL 质量追溯应用示例
+-- 源自 monograph/KOS-TL-Book.tex 第八章 "KOS-TL的应用示例"
+-- 轴承生产质量追溯因果推理：类型与谓词的 kos 语法表达
+
+module QualityTraceability where
+
+-- =============================================================================
+-- 1. 基础原子类型 (Core 层定义)
+-- 领域概念与逻辑层类型对应：BatchID(Val), Machine(Val), Time(Float/UInt64)
+-- =============================================================================
+
+type BatchID   : U0
+type Machine  : U0
+type Time     : U0
+type ErrorCode : U0
+type Param    : U0
+type Val      : U0
+
+-- 时间区间 (dur: Time × Time)，用于 ProcStep 的工序时间段
+-- 对应 monograph: Σ(dur: Time × Time)
+-- 注：kos 的 type 不支持 ":=" 体，带体的类型别名须用 def
+def TimeRange : Type1 := Sigma(t_start : Time). Time
+
+-- =============================================================================
+-- 2. 谓词类型 (Props) - 命题标识符，用于 Sigma 的证明分量
+-- PInRoute: 批次 b 是否允许在机器 m 上加工
+-- POverlap: 时间点 t 是否落在区间 dur 之内
+-- PTimeOK, PSpaceOK, PBatchOK: 因果证明的三重一致性约束
+-- PCausal: 复合因果谓词 (时序+空间+批次)
+-- =============================================================================
+
+-- =============================================================================
+-- 3. 事件与约束类型 (Sigma 类型构造)
+-- =============================================================================
+
+-- FailEvt: 失效事件类型
+-- 定义: Σ(b:BatchID). Σ(err:ErrorCode). Σ(t:Time). Proof(t ∈ Shift_QA)
+-- 记录哪个批次坏了、错误码、检测时间，并强制"检测时间须在质检班次内"的证明
+def FailEvt : Type1 := Sigma(b : BatchID). Sigma(err : ErrorCode). Sigma(t : Time). Prop PInShiftQA
+
+-- ProcStep: 生产过程类型
+-- 定义: Σ(b:BatchID). Σ(m:Machine). Σ(dur:Time×Time). Proof(InRoute(b,m))
+-- 通过 InRoute 约束确保该批次在机器 m 上的记录符合工艺路径
+def ProcStep : Type1 := Sigma(b : BatchID). Sigma(m : Machine). Sigma(dur : TimeRange). Prop PInRoute
+
+-- Anomaly: 环境异常类型
+-- 定义: Σ(m:Machine). Σ(p:Param). Σ(v:Val). Σ(t:Time). ⊤（末项为占位，kos 用 Prop）
+def Anomaly : Type1 := Sigma(m : Machine). Sigma(p : Param). Sigma(v : Val). Sigma(t : Time). Prop PAnomaly
+
+-- CausalProof: 因果证明类型
+-- 定义: Σ(e:ProcStep). Prop_causal(a,e,f)
+-- 依存乘积类型，要求同时满足时序、位置、工艺逻辑的一致性
+def CausalProof : Type1 := Sigma(e : ProcStep). Prop PCausal
+
+-- RootCauseReport: 根因报告
+-- 定义: Σ(f:FailEvt). Σ(a:Anomaly). CausalProof(a,f)
+-- 失效存在性 + 异常存在性 + 因果证明
+def RootCauseReport : Type1 := Sigma(f : FailEvt). Sigma(a : Anomaly). CausalProof
+
+-- =============================================================================
+-- 4. 构造函数 (Constructors) - monograph 表 8.2
+-- =============================================================================
+
+-- mkFailure: 失效事件构造函数
+def mkFailure : Pi(b : BatchID). Pi(err : ErrorCode). Pi(t : Time). (Prop PInShiftQA -> FailEvt) :=
+  lam (b : BatchID) . lam (err : ErrorCode) . lam (t : Time) . lam (prf : Prop PInShiftQA) .
+  < b , < err , < t , prf > > >
+
+-- mkStep: 生产过程步骤构造函数
+def mkStep : Pi(b : BatchID). Pi(m : Machine). Pi(dur : TimeRange). (Prop PInRoute -> ProcStep) :=
+  lam (b : BatchID) . lam (m : Machine) . lam (dur : TimeRange) . lam (prf : Prop PInRoute) .
+  < b , < m , < dur , prf > > >
+
+-- mkAnomaly: 异常构造函数
+def mkAnomaly : Pi(m : Machine). Pi(p : Param). Pi(v : Val). Pi(t : Time). Anomaly :=
+  lam (m : Machine) . lam (p : Param) . lam (v : Val) . lam (t : Time) .
+  < m , < p , < v , < t , Prop PAnomaly > > > >
+
+-- mkCausalProof: 因果证明构造函数 (monograph 算法 8.1)
+-- 接收 TimeOK/SpaceOK/BatchOK 三个一致性证明，产出 CausalProof
+def mkCausalProof : Pi(a : Anomaly). Pi(f : FailEvt). Pi(e : ProcStep).
+  (Prop PTimeOK -> Prop PSpaceOK -> Prop PBatchOK -> CausalProof) :=
+  lam (a : Anomaly) . lam (f : FailEvt) . lam (e : ProcStep) .
+  lam (pTime : Prop PTimeOK) . lam (pSpace : Prop PSpaceOK) . lam (pBatch : Prop PBatchOK) .
+  < e , Prop PCausal >
+
+-- mkRootCauseReport: 根因报告构造函数
+def mkRootCauseReport : Pi(f : FailEvt). Pi(a : Anomaly). (CausalProof -> RootCauseReport) :=
+  lam (f : FailEvt) . lam (a : Anomaly) . lam (c : CausalProof) .
+  < f , < a , c > >
+
+-- =============================================================================
+-- 5. 值依赖谓词示例 (Value-Dependent Predicates)
+-- 用于时序约束：lt(a.t, f.t) 表示异常时间早于失效时间
+-- =============================================================================
+
+-- 时序谓词示例：8.25 < 10 (异常发生 08:15 早于失效检测 10:00，以小时计)
+def timeBeforeAnomaly : Type1 := lt(val "8.25", val "10")
+-- 批次 ID 相等性
+def batchEq : Type1 := eq(id "BATCH1", id "BATCH1")
+
+-- =============================================================================
+-- 6. 示例项 (Terms) - 使用构造子的实例
+-- 对应 monograph 表：f_fail, e_proc, a_volt 等
+-- =============================================================================
+
+-- 原子数据项示例
+def batchIdEx : BatchID := id "Batch_202310-01"
+def machineEx : Machine := val "M_03"
+def timeEx : Time := time "10:00"
+def errEx : ErrorCode := val "HARD_ERR"
+
+-- 失效事件实例 f_fail (直接构造)
+def failEvtStruct : Sigma(b : BatchID). Sigma(err : ErrorCode). Sigma(t : Time). Prop PInShiftQA :=
+  < id "B2310" , < val "HARD_ERR" , < time "10:00" , Prop PInShiftQA > > >
+
+-- 失效事件实例 (用 mkFailure 构造)
+def failEvtEx : FailEvt := mkFailure (id "B2310") (val "HARD_ERR") (time "10:00") (Prop PInShiftQA)
+
+-- Anomaly 实例 a_volt (直接构造)
+def anomalyStruct : Anomaly :=
+  < val "M_03" , < val "Voltage_Drop" , < val "15" , < time "08:15" , Prop PAnomaly > > > >
+
+-- Anomaly 实例 (用 mkAnomaly 构造)
+def anomalyEx : Anomaly := mkAnomaly (val "M_03") (val "Voltage_Drop") (val "15") (time "08:15")
+
+-- ProcStep 实例 e_proc: (Batch_202310-01, M_03, 08:00-09:30) + 路径证明
+def timeRangeEx : TimeRange := < time "08:00" , time "09:30" >
+def procStepEx : ProcStep := mkStep batchIdEx machineEx timeRangeEx (Prop PInRoute)
+def causalProofEx : CausalProof :=
+  mkCausalProof anomalyEx failEvtEx procStepEx (Prop PTimeOK) (Prop PSpaceOK) (Prop PBatchOK)
+def rootCauseReportEx : RootCauseReport := mkRootCauseReport failEvtEx anomalyEx causalProofEx
+
+-- =============================================================================
+-- 语义说明与限制 (Semantic notes and limitations)
+-- =============================================================================
+--
+-- 1. 公理化证明 (Axiomatized proofs):
+--    failEvtStruct 中的 Prop PInShiftQA、ProcStep 所需的 Prop PInRoute、
+--    CausalProof 所需的 Prop PCausal 均以 Prop X 本身作为项，即公理化断言，
+--    而非构造性证明。真实系统需由 Kernel 层从数据验证生成证明项。
+--
+-- 2. RootCauseReport 的构造:
+--    现已提供 mkFailure, mkStep, mkAnomaly, mkCausalProof, mkRootCauseReport
+--    等构造子。mkCausalProof 接收 TimeOK/SpaceOK/BatchOK 证明（当前公理化），
+--    可完整构造 rootCauseReportEx。
+--
+-- 3. 类型语法: type X : A 不支持 ":=" 体，带体的类型别名须用 def。

@@ -84,6 +84,7 @@ static int expand_capacity(TypeOntology* ontology) {
 }
 
 // 添加类型定义
+// Core 层约束：type_def 必须为良构类型，否则拒绝注册
 int kos_ontology_add_type_definition(TypeOntology* ontology,
                                      const char* name,
                                      kos_term* type_def,
@@ -91,7 +92,9 @@ int kos_ontology_add_type_definition(TypeOntology* ontology,
     if (!ontology || !name || !type_def) {
         return -1;
     }
-    
+    if (!kos_type_wellformed(type_def)) {
+        return -1;  /* 非法类型：不能建构的类型不得注册 */
+    }
     // 检查是否已存在
     if (kos_ontology_find_type_definition(ontology, name)) {
         return -1;  // 已存在

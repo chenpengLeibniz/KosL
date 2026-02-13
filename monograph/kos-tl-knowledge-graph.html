@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOS-TL 类型与项知识图谱（依赖类型论视角）</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+    <script>
+        // 检查vis库是否加载成功
+        window.addEventListener('load', function() {
+            if (typeof vis === 'undefined') {
+                console.error('vis-network库加载失败，尝试备用CDN');
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js';
+                script.onload = function() {
+                    console.log('备用CDN加载成功');
+                    initializeNetwork();
+                };
+                script.onerror = function() {
+                    document.getElementById('network-container').innerHTML = 
+                        '<div style="padding: 20px; text-align: center; color: red;">' +
+                        '<h3>网络库加载失败</h3>' +
+                        '<p>请检查网络连接，或使用本地文件</p>' +
+                        '<p>错误：无法加载vis-network库</p>' +
+                        '</div>';
+                };
+                document.head.appendChild(script);
+            } else {
+                console.log('vis-network库加载成功');
+            }
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            padding-left: 220px;
+            background-color: #f5f5f5;
+        }
+        /* 左侧悬浮功能菜单 */
+        #feature-menu-float {
+            position: fixed;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 180px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            padding: 12px 0;
+            z-index: 1001;
+            border: 1px solid #e0e0e0;
+        }
+        #feature-menu-float .menu-title {
+            padding: 8px 14px 10px;
+            font-size: 13px;
+            color: #666;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 6px;
+        }
+        #feature-menu-float .menu-item {
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            margin: 2px 8px;
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            box-sizing: border-box;
+        }
+        #feature-menu-float .menu-item:hover {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        #feature-menu-float .menu-item.active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1565c0;
+            font-weight: bold;
+        }
+        #header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #header p {
+            color: #666;
+            font-size: 14px;
+        }
+        #network-container {
+            width: 100%;
+            height: 800px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #legend {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #legend h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 5px 15px;
+            font-size: 14px;
+        }
+        .legend-line {
+            display: inline-block;
+            width: 30px;
+            height: 3px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .legend-node {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-radius: 50%;
+        }
+        #info-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 600px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        #info-panel h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 5px;
+        }
+        #info-panel .info-item {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-left: 3px solid #4CAF50;
+            border-radius: 3px;
+        }
+        #info-panel .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+        #info-panel .info-value {
+            color: #333;
+            margin-top: 5px;
+        }
+        #comparison-panel {
+            display: none;
+            margin-bottom: 15px;
+            padding: 20px;
+            background-color: white;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+        #comparison-panel h2 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        #comparison-panel .comparison-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 5px;
+        }
+        #comparison-panel table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        #comparison-panel th, #comparison-panel td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        #comparison-panel th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #comparison-panel tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        #comparison-panel code {
+            background-color: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .controls {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .controls button {
+            margin: 5px;
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .controls button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧悬浮功能菜单 -->
+    <nav id="feature-menu-float">
+        <div class="menu-title">选择功能</div>
+        <button type="button" class="menu-item active" data-value="trajectory">功能一：轨迹演化</button>
+        <button type="button" class="menu-item" data-value="diff">功能二：状态拖动与差异对比</button>
+        <button type="button" class="menu-item" data-value="comparison">与传统知识图谱对比</button>
+    </nav>
+
+    <div id="header">
+        <h1>KOS-TL 类型与项知识图谱</h1>
+        <p>依赖类型论视角 - Γ（类型/谓词）与 σ（项）轨迹演化</p>
+    </div>
+
+    <!-- 功能一：轨迹演化（仅按钮，无差异高亮） -->
+    <div id="trajectory-panel" style="margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; border: 1px solid #2196F3;">
+        <h3 style="margin-top: 0; color: #1565c0;">功能一：轨迹演化 (Trace Evolution)</h3>
+        <p style="margin: 8px 0; font-size: 14px; color: #333;">
+            <strong>当前状态：</strong> <span id="trajectory-state-label">Γ₀, σ₀</span> &nbsp;|&nbsp;
+            <strong>逻辑时钟 TS =</strong> <span id="trajectory-ts-label">0</span>
+        </p>
+        <p id="trajectory-event-label" style="margin: 4px 0; font-size: 13px; color: #666; font-style: italic;"></p>
+        <div style="margin-top: 10px;">
+            <button id="btn-prev-step" onclick="prevStep()" disabled style="margin-right: 8px; padding: 8px 16px; background: #9e9e9e; color: white; border: none; border-radius: 4px; cursor: pointer;">上一步</button>
+            <button id="btn-next-step" onclick="nextStep()" style="margin-right: 8px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">下一步演化</button>
+            <button onclick="goToStep(0)" style="padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">重置到 σ₀</button>
+        </div>
+        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">仅通过按钮逐步查看 Γ 与 σ 的演化，图谱使用常规颜色，无差异高亮。</p>
+    </div>
+
+    <!-- 功能二：状态拖动与差异对比（仅滑块，带差异高亮） -->
+    <div id="diff-slider-panel" style="display: none; margin-bottom: 15px; padding: 15px; background: #fff8e1; border-radius: 8px; border: 1px solid #ffc107;">
+        <h3 style="margin-top: 0; color: #f57f17;">功能二：状态拖动与差异对比</h3>
+        <p style="margin: 0 0 10px 0; font-size: 13px; color: #555;">拖动滑块切换状态，图中<strong style="color: #2e7d32;">绿色边框/高亮</strong>表示<strong>本步新增</strong>的节点或边（与上一状态对比）。与上方「轨迹演化」独立，互不影响。</p>
+        <label style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="min-width: 48px;">状态</span>
+            <input type="range" id="state-slider" min="0" max="4" value="0" step="1" style="flex: 1; min-width: 120px; max-width: 300px;">
+            <span id="state-slider-value">0</span>
+            <span id="state-slider-label">Γ₀, σ₀</span>
+        </label>
+    </div>
+
+    <div id="graph-area">
+        <div class="controls">
+            <button onclick="resetView()">重置视图</button>
+            <button onclick="fitView()">适应窗口</button>
+            <button onclick="togglePhysics()">切换物理引擎</button>
+            <button onclick="exportImage()">导出图片</button>
+        </div>
+
+        <div id="network-container"></div>
+
+        <div id="legend">
+            <h3>图例</h3>
+            <div>
+                <div class="legend-item">
+                    <span class="legend-node" style="background-color: #90CAF9; border: 2px solid #2196F3;"></span>
+                    <span>基础原子类型</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-node" style="background-color: #A5D6A7; border: 2px solid #4CAF50;"></span>
+                    <span>复合类型</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-node" style="background-color: #FFCC80; border: 2px solid #FF9800;"></span>
+                    <span>谓词类型</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-node" style="background-color: #CE93D8; border: 2px solid #9C27B0;"></span>
+                    <span>构造函数</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-node" style="background-color: #EF9A9A; border: 2px solid #F44336;"></span>
+                    <span>项实例 (σ 中项，随演化步逐步出现)</span>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <div class="legend-item">
+                    <span class="legend-line" style="background-color: #2196F3;"></span>
+                    <span>Σ类型依赖</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line" style="background-color: #4CAF50; border-top: 2px dashed #4CAF50;"></span>
+                    <span>Π类型依赖</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line" style="background-color: #FF9800;"></span>
+                    <span>谓词依赖</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line" style="background-color: #F44336;"></span>
+                    <span>实例化关系</span>
+                </div>
+                <div class="legend-item" style="margin-top: 8px;">
+                    <span class="legend-node" style="background-color: #e8f5e9; border: 3px solid #2e7d32;"></span>
+                    <span>本步新增（与上一状态差异）</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-panel">
+        <h3>节点信息</h3>
+        <div id="info-content"></div>
+    </div>
+
+    <div id="comparison-panel">
+        <h2>KOS-TL知识图谱 vs 传统知识图谱</h2>
+        
+        <div class="comparison-section">
+            <h3>一、核心区别</h3>
+            <table>
+                <tr>
+                    <th>维度</th>
+                    <th>传统知识图谱（RDF/OWL/Neo4j）</th>
+                    <th>KOS-TL知识图谱</th>
+                </tr>
+                <tr>
+                    <td><strong>表示范式</strong></td>
+                    <td>三元组模型 (主体, 谓词, 客体)</td>
+                    <td>类型-项模型 (Type, Term)，通过Σ和Π类型构造</td>
+                </tr>
+                <tr>
+                    <td><strong>语义基础</strong></td>
+                    <td>模型论（Model Theory）- 真值判定</td>
+                    <td>类型论（Type Theory）- 证明构造</td>
+                </tr>
+                <tr>
+                    <td><strong>操作方式</strong></td>
+                    <td>查询驱动（SPARQL/Cypher）</td>
+                    <td>证明驱动（类型检查和证明构造）</td>
+                </tr>
+                <tr>
+                    <td><strong>约束表达</strong></td>
+                    <td>外部约束（OWL公理、规则引擎）</td>
+                    <td>内生约束（类型定义中的Proof分量）</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="comparison-section">
+            <h3>二、知识表示优势</h3>
+            <h4>1. 内生约束 vs 外部规则</h4>
+            <p><strong>传统方式：</strong></p>
+            <code>IF batch.producedOn machine AND NOT InRoute(batch, machine) THEN ERROR</code>
+            <p>→ 规则与数据分离，可能被绕过</p>
+            
+            <p><strong>KOS-TL方式：</strong></p>
+            <code>ProcStep ≡ Σ(b:BatchID).Σ(m:Machine).Proof(InRoute(b,m))</code>
+            <p>→ 约束是类型的一部分，无法绕过</p>
+
+            <h4>2. 证明即数据 vs 证据元数据</h4>
+            <p><strong>传统方式：</strong></p>
+            <code>Report :hasEvidence Evidence1</code>
+            <p>→ 证据与报告是弱关联，可以缺失</p>
+            
+            <p><strong>KOS-TL方式：</strong></p>
+            <code>RootCauseReport ≡ Σ(f:FailEvt).Σ(a:Anomaly).CausalProof(a,f)</code>
+            <p>→ 证明是类型的一部分，缺失则类型不成立</p>
+        </div>
+
+        <div class="comparison-section">
+            <h3>三、知识操作优势</h3>
+            <h4>1. 构造即验证 vs 先存储后验证</h4>
+            <p><strong>传统方式：</strong></p>
+            <ul>
+                <li>存储数据 → 运行验证规则 → 发现错误 → 回滚</li>
+                <li>问题：非法数据可能已存储</li>
+            </ul>
+            
+            <p><strong>KOS-TL方式：</strong></p>
+            <ul>
+                <li>构造类型 → 类型检查 → 通过则创建，失败则无法创建</li>
+                <li>优势：非法数据无法构造</li>
+            </ul>
+
+            <h4>2. 证明驱动推理 vs 查询驱动推理</h4>
+            <p><strong>传统方式：</strong></p>
+            <code>SELECT ?anomaly WHERE { ?failure :causedBy ?anomaly }</code>
+            <p>→ 返回匹配的数据（可能不完整或不一致）</p>
+            
+            <p><strong>KOS-TL方式：</strong></p>
+            <code>analyze(f:FailEvt) : Option(Σ(a:Anomaly).CausalProof(a,f))</code>
+            <p>→ 返回构造的证明（保证时序、空间、批次一致性）</p>
+        </div>
+
+        <div class="comparison-section">
+            <h3>四、核心优势总结</h3>
+            <table>
+                <tr>
+                    <th>优势维度</th>
+                    <th>KOS-TL知识图谱</th>
+                </tr>
+                <tr>
+                    <td><strong>类型安全</strong></td>
+                    <td>类型系统保证知识对象的合法性，编译时检查</td>
+                </tr>
+                <tr>
+                    <td><strong>证明透明</strong></td>
+                    <td>每个知识对象都携带构造证明，可追溯</td>
+                </tr>
+                <tr>
+                    <td><strong>逻辑内核</strong></td>
+                    <td>知识图谱是逻辑系统，类型检查器即推理引擎</td>
+                </tr>
+                <tr>
+                    <td><strong>非单调演化</strong></td>
+                    <td>通过证明项实现知识覆盖，保留历史</td>
+                </tr>
+                <tr>
+                    <td><strong>跨域一致性</strong></td>
+                    <td>类型级别锁定，无法绕过约束</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="comparison-section">
+            <h3>五、KOS-TL知识图谱的劣势与局限性</h3>
+            
+            <h4>1. 计算复杂度与性能</h4>
+            <ul>
+                <li><strong>类型检查开销</strong>：每次构造都需要完整类型检查</li>
+                <li><strong>证明构造成本</strong>：可能需要复杂的搜索和验证</li>
+                <li><strong>可扩展性挑战</strong>：大规模知识库中可能成为性能瓶颈</li>
+            </ul>
+
+            <h4>2. 学习曲线与可用性</h4>
+            <ul>
+                <li><strong>概念门槛高</strong>：依赖类型论对用户较难理解</li>
+                <li><strong>工具生态不成熟</strong>：相比RDF/OWL，工具和库较少</li>
+                <li><strong>查询语言复杂</strong>：需要理解类型系统才能有效查询</li>
+            </ul>
+
+            <h4>3. 表达能力限制</h4>
+            <ul>
+                <li><strong>不确定性处理困难</strong>：难以表达"可能"、"大概"等不确定知识</li>
+                <li><strong>概率推理缺失</strong>：无法直接表达概率分布或置信度</li>
+                <li><strong>模糊匹配困难</strong>：类型检查是精确匹配，难以处理近似匹配</li>
+            </ul>
+
+            <h4>4. 动态性与灵活性</h4>
+            <ul>
+                <li><strong>类型定义固定</strong>：修改类型需要重新验证所有相关项</li>
+                <li><strong>快速迭代困难</strong>：在快速变化领域，严格性可能成为负担</li>
+                <li><strong>探索性查询受限</strong>：难以进行"试试看"的探索性查询</li>
+            </ul>
+
+            <h4>5. 工具与生态</h4>
+            <ul>
+                <li><strong>工具链不成熟</strong>：相比RDF/OWL生态系统，工具较少</li>
+                <li><strong>标准化程度低</strong>：缺乏统一的标准和最佳实践</li>
+                <li><strong>集成困难</strong>：与现有系统集成可能需要大量适配工作</li>
+            </ul>
+        </div>
+
+        <div class="comparison-section">
+            <h3>六、适用场景对比</h3>
+            <table>
+                <tr>
+                    <th>场景类型</th>
+                    <th>传统知识图谱</th>
+                    <th>KOS-TL知识图谱</th>
+                </tr>
+                <tr>
+                    <td><strong>大规模开放域</strong></td>
+                    <td>✅ 适合（如通用知识图谱）</td>
+                    <td>❌ 不适合（类型系统过于严格）</td>
+                </tr>
+                <tr>
+                    <td><strong>快速原型探索</strong></td>
+                    <td>✅ 适合（灵活快速）</td>
+                    <td>❌ 不适合（类型定义负担）</td>
+                </tr>
+                <tr>
+                    <td><strong>概率推理</strong></td>
+                    <td>✅ 适合（可添加概率标注）</td>
+                    <td>❌ 不适合（难以表达不确定性）</td>
+                </tr>
+                <tr>
+                    <td><strong>强一致性要求</strong></td>
+                    <td>⚠️ 部分适合（需要外部验证）</td>
+                    <td>✅ 非常适合（类型级别保证）</td>
+                </tr>
+                <tr>
+                    <td><strong>可追溯性要求</strong></td>
+                    <td>⚠️ 部分适合（需要外部追踪）</td>
+                    <td>✅ 非常适合（证明项内生于类型）</td>
+                </tr>
+                <tr>
+                    <td><strong>跨域一致性</strong></td>
+                    <td>⚠️ 部分适合（需要规则引擎）</td>
+                    <td>✅ 非常适合（类型级别锁定）</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="comparison-section">
+            <h3>七、选择建议</h3>
+            <p><strong>选择KOS-TL知识图谱，当：</strong></p>
+            <ul>
+                <li>✅ 需要<strong>强一致性保证</strong>（金融、医疗、法律）</li>
+                <li>✅ 需要<strong>完整可追溯性</strong>（质量追溯、审计）</li>
+                <li>✅ 需要<strong>逻辑证明</strong>（合规检查、安全验证）</li>
+                <li>✅ 领域知识相对稳定（制造业、金融）</li>
+            </ul>
+
+            <p><strong>选择传统知识图谱，当：</strong></p>
+            <ul>
+                <li>✅ 大规模开放域知识库（通用知识图谱）</li>
+                <li>✅ 快速原型和探索（研究阶段）</li>
+                <li>✅ 概率推理为主（推荐系统）</li>
+                <li>✅ 需要与现有工具集成（已有RDF/OWL基础设施）</li>
+            </ul>
+
+            <p><strong>核心权衡：</strong></p>
+            <ul>
+                <li>KOS-TL：<strong>严谨性</strong> vs <strong>灵活性</strong></li>
+                <li>传统：<strong>易用性</strong> vs <strong>一致性保证</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // 节点数据
+        const nodes = new vis.DataSet([
+            // 基础原子类型
+            {id: 'BatchID', label: 'BatchID', group: 'atom', title: '批次标识符类型', description: '基础原子类型'},
+            {id: 'Machine', label: 'Machine', group: 'atom', title: '机器/设备类型', description: '基础原子类型'},
+            {id: 'Time', label: 'Time', group: 'atom', title: '时间类型', description: 'Unix时间戳或逻辑时钟'},
+            {id: 'ErrorCode', label: 'ErrorCode', group: 'atom', title: '错误代码类型', description: '基础原子类型'},
+            {id: 'Param', label: 'Param', group: 'atom', title: '参数类型', description: '基础原子类型'},
+            {id: 'Val', label: 'Val', group: 'atom', title: '值类型', description: '基础原子类型'},
+            {id: 'Voucher', label: 'Voucher', group: 'atom', title: '凭证类型', description: '基础原子类型'},
+            {id: 'Action', label: 'Action', group: 'atom', title: '动作类型', description: '基础原子类型'},
+            
+            // 复合类型
+            {id: 'FailEvt', label: 'FailEvt', group: 'composite', title: '失效事件类型', 
+             description: 'Σ(b:BatchID).Σ(err:ErrorCode).Σ(t:Time).Proof(t ∈ Shift_QA)'},
+            {id: 'ProcStep', label: 'ProcStep', group: 'composite', title: '生产过程类型',
+             description: 'Σ(b:BatchID).Σ(m:Machine).Σ(dur:Time×Time).Proof(InRoute(b,m))'},
+            {id: 'Anomaly', label: 'Anomaly', group: 'composite', title: '环境异常类型',
+             description: 'Σ(m:Machine).Σ(p:Param).Σ(v:Val).Σ(t:Time)'},
+            {id: 'CausalProof', label: 'CausalProof', group: 'composite', title: '因果证明类型',
+             description: 'Σ(e:ProcStep).Prop_causal(a,e,f)'},
+            {id: 'RootCauseReport', label: 'RootCauseReport', group: 'composite', title: '根因报告',
+             description: 'Σ(f:FailEvt).Σ(a:Anomaly).CausalProof(a,f)'},
+            {id: 'AuditVoucher', label: 'AuditVoucher', group: 'composite', title: '待审计凭证',
+             description: 'Σ(v:Voucher).(QualIssue(b) → FrozenStatus(v,s))'},
+            {id: 'QualRectified', label: 'QualRectified', group: 'composite', title: '整改证明类型',
+             description: 'Σ(a:Action).Σ(p_new:QualPass(b)).CausalResolve(a,p_old,p_new)'},
+            {id: 'WaterPressureAnomaly', label: 'WaterPressureAnomaly', group: 'composite', title: '水压异常类型',
+             description: 'Π(w_val:ℝ).(w_val < w_min ∨ w_val > w_max) → Anomaly'},
+            
+            // 谓词类型
+            {id: 'InRoute', label: 'InRoute', group: 'predicate', title: '路径谓词',
+             description: '批次b是否允许在机器m上加工'},
+            {id: 'TimeOK', label: 'TimeOK', group: 'predicate', title: '时序一致性',
+             description: '(a.t ∈ e.dur) ∧ (e.dur.end < f.t)'},
+            {id: 'SpaceOK', label: 'SpaceOK', group: 'predicate', title: '空间一致性',
+             description: 'a.m = e.m'},
+            {id: 'BatchOK', label: 'BatchOK', group: 'predicate', title: '批次一致性',
+             description: 'e.b = f.b'},
+            {id: 'PropCausal', label: 'Prop_causal', group: 'predicate', title: '复合因果谓词',
+             description: '组合TimeOK、SpaceOK、BatchOK'},
+            {id: 'QualIssue', label: 'QualIssue', group: 'predicate', title: '质量域异常证明',
+             description: 'Σ(a:Anomaly).Σ(e:ProcStep).CausalProof(a,e,b)'},
+            {id: 'CausalResolve', label: 'CausalResolve', group: 'predicate', title: '因果解决',
+             description: '动作a解决了旧证明p_old，产生新证明p_new'},
+            
+            // 构造函数
+            {id: 'mkFailure', label: 'mkFailure', group: 'constructor', title: '失效事件构造函数',
+             description: '构造FailEvt类型的项'},
+            {id: 'mkStep', label: 'mkStep', group: 'constructor', title: '生产过程步骤构造函数',
+             description: '构造ProcStep类型的项'},
+            {id: 'mkAnomaly', label: 'mkAnomaly', group: 'constructor', title: '异常构造函数',
+             description: '构造Anomaly类型的项'},
+            {id: 'mkCausalProof', label: 'mkCausalProof', group: 'constructor', title: '因果证明构造函数',
+             description: 'Π(a:Anomaly).Π(f:FailEvt).Π(e:ProcStep).TimeOK→SpaceOK→BatchOK→CausalProof'},
+            {id: 'mkAuditVoucher', label: 'mkAuditVoucher', group: 'constructor', title: '审计凭证构造函数',
+             description: '构造AuditVoucher类型的项'},
+            {id: 'mkUnlockProof', label: 'mkUnlockProof', group: 'constructor', title: '解锁证明构造函数',
+             description: 'Π(v_aud:AuditVoucher).Π(p_rect:QualRectified).NormalVoucher'},
+            
+            // 项实例
+            {id: 'f0', label: 'f₀', group: 'term', title: '失效事件实例',
+             description: 'mkFailure(Batch_202310-01, Hardness_Issue, 10:00, π_QA_Sign)'},
+            {id: 'eproc', label: 'e_proc', group: 'term', title: '生产记录项',
+             description: 'mkStep(Batch_202310-01, M_03, ⟨08:00,09:30⟩, π_route)'},
+            {id: 'avolt', label: 'a_volt', group: 'term', title: '电压异常实例',
+             description: 'mkAnomaly(M_03, Voltage_Drop, 08:15, π_iot_hash)'},
+            {id: 'prfcausal', label: 'prf_causal', group: 'term', title: '因果证明项',
+             description: '自动校验时序约束的证明项'},
+            {id: 'ptime', label: 'p_time', group: 'term', title: '时序一致性证明项',
+             description: '(a.t ∈ e.dur) ∧ (e.dur.end < f.t)'},
+            {id: 'pspace', label: 'p_space', group: 'term', title: '空间一致性证明项',
+             description: 'a.m = e.m'},
+            {id: 'pqual', label: 'p_qual', group: 'term', title: '质量证明项',
+             description: 'QualIssue(b)的证明'},
+            {id: 'prect', label: 'p_rect', group: 'term', title: '整改证明项',
+             description: 'QualRectified的证明项'},
+            {id: 'pok', label: 'p_ok', group: 'term', title: 'InRoute 证明项',
+             description: 'Proof(InRoute(Batch_202310-01, M_03))'},
+            {id: 'pbatch', label: 'p_batch', group: 'term', title: '批次一致性证明项',
+             description: 'e.b = f.b 的证明'},
+            {id: 'vaudit', label: 'v_audit', group: 'term', title: '待审计凭证项',
+             description: 'mkAuditVoucher(v_original, p_qual)'},
+            {id: 'vnormal', label: 'v_normal', group: 'term', title: '正常凭证项',
+             description: 'unlockPayment(v_audit, p_rect)'}
+        ]);
+
+        // 轨迹演化：项节点在哪个状态步出现 (σ)
+        const TERM_AT_STEP = {
+            eproc: 1, pok: 1,
+            avolt: 2, f0: 2, prfcausal: 2, ptime: 2, pspace: 2, pbatch: 2,
+            pqual: 3, vaudit: 3,
+            prect: 4, vnormal: 4
+        };
+        // Γ 随轨迹变化：类型/谓词/构造函数首次出现的步数（未列出则为 0）
+        const GAMMA_AT_STEP = {
+            BatchID: 0, Machine: 0, Time: 0, ProcStep: 0, InRoute: 0, mkStep: 0, Param: 0, Val: 0,
+            ErrorCode: 1, FailEvt: 1, Anomaly: 1, mkFailure: 1, mkAnomaly: 1,
+            CausalProof: 2, TimeOK: 2, SpaceOK: 2, BatchOK: 2, PropCausal: 2, RootCauseReport: 2, mkCausalProof: 2,
+            Voucher: 3, QualIssue: 3, AuditVoucher: 3, mkAuditVoucher: 3,
+            Action: 4, QualRectified: 4, CausalResolve: 4, mkUnlockProof: 4, WaterPressureAnomaly: 4
+        };
+        const GAMMA_NODE_IDS = new Set(nodes.getIds().filter(function(id) { return !TERM_AT_STEP[id]; }));
+        const MAX_STEP = 4;
+        const STEP_LABELS = ['Γ₀, σ₀ (初始)', 'Γ₁, σ₁ (生产)', 'Γ₂, σ₂ (异常)', 'Γ₃, σ₃ (冻结)', 'Γ₄, σ₄ (解锁)'];
+        const STEP_EVENTS = [
+            null,
+            '⟨ e_proc, p_ok ⟩  批次进入 M_03 加工',
+            '⟨ e_volt, p_fail ⟩  电压异常 → 因果证明',
+            '⟨ e_sys, p_lock ⟩  质量异常 → 凭证冻结',
+            '⟨ e_rect, p_rect ⟩  整改通过 → 凭证解锁'
+        ];
+        let currentStep = 0;
+        // 差异高亮色：本步新增的节点边框/边颜色
+        const DIFF_NEW_BORDER = '#2e7d32';
+        const DIFF_NEW_EDGE = '#1b5e20';
+
+        // 边数据（关系）
+        const edgesRaw = [
+            // Σ类型依赖（蓝色）
+            {from: 'FailEvt', to: 'BatchID', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'FailEvt', to: 'ErrorCode', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'FailEvt', to: 'Time', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'ProcStep', to: 'BatchID', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'ProcStep', to: 'Machine', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'ProcStep', to: 'Time', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'Anomaly', to: 'Machine', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'Anomaly', to: 'Param', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'Anomaly', to: 'Val', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'Anomaly', to: 'Time', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'CausalProof', to: 'ProcStep', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'RootCauseReport', to: 'FailEvt', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'RootCauseReport', to: 'Anomaly', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'RootCauseReport', to: 'CausalProof', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'AuditVoucher', to: 'Voucher', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'QualRectified', to: 'Action', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            {from: 'WaterPressureAnomaly', to: 'Anomaly', color: {color: '#2196F3'}, arrows: 'to', title: 'Σ类型依赖'},
+            
+            // Π类型依赖（绿色虚线）
+            {from: 'mkCausalProof', to: 'Anomaly', color: {color: '#4CAF50'}, dashes: true, arrows: 'to', title: 'Π类型依赖'},
+            {from: 'mkCausalProof', to: 'FailEvt', color: {color: '#4CAF50'}, dashes: true, arrows: 'to', title: 'Π类型依赖'},
+            {from: 'mkCausalProof', to: 'ProcStep', color: {color: '#4CAF50'}, dashes: true, arrows: 'to', title: 'Π类型依赖'},
+            {from: 'mkCausalProof', to: 'CausalProof', color: {color: '#4CAF50'}, dashes: true, arrows: 'to', title: 'Π类型依赖'},
+            {from: 'mkUnlockProof', to: 'AuditVoucher', color: {color: '#4CAF50'}, dashes: true, arrows: 'to', title: 'Π类型依赖'},
+            {from: 'mkUnlockProof', to: 'QualRectified', color: {color: '#4CAF50'}, dashes: true, arrows: 'to', title: 'Π类型依赖'},
+            {from: 'WaterPressureAnomaly', to: 'Anomaly', color: {color: '#4CAF50'}, dashes: [5,5], arrows: 'to', title: 'Π类型依赖'},
+            
+            // 谓词依赖（橙色）
+            {from: 'ProcStep', to: 'InRoute', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'CausalProof', to: 'PropCausal', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'PropCausal', to: 'TimeOK', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'PropCausal', to: 'SpaceOK', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'PropCausal', to: 'BatchOK', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'QualIssue', to: 'Anomaly', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'QualIssue', to: 'ProcStep', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'QualIssue', to: 'CausalProof', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'AuditVoucher', to: 'QualIssue', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            {from: 'QualRectified', to: 'CausalResolve', color: {color: '#FF9800'}, arrows: 'to', title: '谓词依赖'},
+            
+            // 实例化关系（红色）
+            {from: 'f0', to: 'FailEvt', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'eproc', to: 'ProcStep', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'avolt', to: 'Anomaly', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'prfcausal', to: 'CausalProof', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'ptime', to: 'TimeOK', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'pspace', to: 'SpaceOK', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'pqual', to: 'QualIssue', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'prect', to: 'QualRectified', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'mkFailure', to: 'FailEvt', color: {color: '#F44336'}, arrows: 'to', title: '构造函数映射'},
+            {from: 'mkStep', to: 'ProcStep', color: {color: '#F44336'}, arrows: 'to', title: '构造函数映射'},
+            {from: 'mkAnomaly', to: 'Anomaly', color: {color: '#F44336'}, arrows: 'to', title: '构造函数映射'},
+            {from: 'mkCausalProof', to: 'CausalProof', color: {color: '#F44336'}, arrows: 'to', title: '构造函数映射'},
+            {from: 'mkAuditVoucher', to: 'AuditVoucher', color: {color: '#F44336'}, arrows: 'to', title: '构造函数映射'},
+            {from: 'mkUnlockProof', to: 'QualRectified', color: {color: '#F44336'}, arrows: 'to', title: '构造函数映射'},
+            {from: 'pok', to: 'InRoute', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'pbatch', to: 'BatchOK', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'vaudit', to: 'AuditVoucher', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'},
+            {from: 'vnormal', to: 'Voucher', color: {color: '#F44336'}, arrows: 'to', title: '实例化关系'}
+        ];
+
+        function getVisibleNodeIds(step) {
+            var s = new Set();
+            nodes.getIds().forEach(function(id) {
+                var termStep = TERM_AT_STEP[id];
+                if (termStep !== undefined) {
+                    if (termStep <= step) s.add(id);
+                } else {
+                    var gammaStep = GAMMA_AT_STEP[id];
+                    if (gammaStep === undefined) gammaStep = 0;
+                    if (gammaStep <= step) s.add(id);
+                }
+            });
+            return s;
+        }
+        function getVisibleEdges(step) {
+            var v = getVisibleNodeIds(step);
+            return edgesRaw.filter(function(e) { return v.has(e.from) && v.has(e.to); });
+        }
+        function applyStep(step, useDiffHighlight) {
+            useDiffHighlight = !!useDiffHighlight;
+            currentStep = Math.max(0, Math.min(step, MAX_STEP));
+            var visibleIds = getVisibleNodeIds(currentStep);
+            var prevIds = currentStep > 0 ? getVisibleNodeIds(currentStep - 1) : new Set();
+            var visibleEdgeList = getVisibleEdges(currentStep);
+            var prevEdgeSet = new Set();
+            if (currentStep > 0) {
+                getVisibleEdges(currentStep - 1).forEach(function(e) {
+                    prevEdgeSet.add(e.from + '\t' + e.to);
+                });
+            }
+            // 仅在使用「功能二」时做差异高亮；功能一（按钮）不做
+            var nodeList = nodes.get().filter(function(n) { return visibleIds.has(n.id); }).map(function(n) {
+                var isNew = useDiffHighlight && currentStep >= 1 && !prevIds.has(n.id);
+                var out = { id: n.id, label: n.label, group: n.group, title: n.title, description: n.description };
+                if (isNew) {
+                    out.color = { background: n.group === 'term' ? '#c8e6c9' : '#e8f5e9', border: DIFF_NEW_BORDER };
+                    out.borderWidth = 4;
+                }
+                return out;
+            });
+            dataNodes.clear();
+            dataNodes.add(nodeList);
+            // 边：仅功能二时，本步新增的用绿色加粗（差异对比）
+            var edgeList = visibleEdgeList.map(function(e) {
+                var edgeKey = e.from + '\t' + e.to;
+                var isNew = useDiffHighlight && currentStep >= 1 && !prevEdgeSet.has(edgeKey);
+                var out = { from: e.from, to: e.to, color: e.color, arrows: e.arrows, dashes: e.dashes, title: e.title };
+                if (isNew) {
+                    out.color = { color: DIFF_NEW_EDGE };
+                    out.width = 3;
+                }
+                return out;
+            });
+            dataEdges.clear();
+            dataEdges.add(edgeList);
+            var t1 = document.getElementById('trajectory-state-label');
+            var t2 = document.getElementById('trajectory-ts-label');
+            var t3 = document.getElementById('trajectory-event-label');
+            var b1 = document.getElementById('btn-prev-step');
+            var b2 = document.getElementById('btn-next-step');
+            if (t1) t1.textContent = STEP_LABELS[currentStep];
+            if (t2) t2.textContent = String(currentStep);
+            if (t3) t3.textContent = STEP_EVENTS[currentStep] ? '上一迁移: ' + STEP_EVENTS[currentStep] : '初始状态，无事件';
+            if (b1) b1.disabled = (currentStep === 0);
+            if (b2) b2.disabled = (currentStep === MAX_STEP);
+            var slider = document.getElementById('state-slider');
+            var sliderVal = document.getElementById('state-slider-value');
+            var sliderLabel = document.getElementById('state-slider-label');
+            if (slider) slider.value = currentStep;
+            if (sliderVal) sliderVal.textContent = currentStep;
+            if (sliderLabel) sliderLabel.textContent = STEP_LABELS[currentStep];
+            if (window.network) {
+                window.network.fit({ animation: { duration: 300 } });
+            }
+        }
+        function nextStep() { applyStep(currentStep + 1, false); }
+        function prevStep() { applyStep(currentStep - 1, false); }
+        function goToStep(k) { applyStep(k, false); }
+        function applyStepBySlider(step) { applyStep(step, true); }
+
+        var dataNodes = new vis.DataSet(nodes.get().filter(function(n) { return getVisibleNodeIds(0).has(n.id); }));
+        var dataEdges = new vis.DataSet(getVisibleEdges(0));
+
+        // 网络配置（使用按轨迹步过滤的节点与边）
+        const data = { nodes: dataNodes, edges: dataEdges };
+        const options = {
+            nodes: {
+                shape: 'dot',
+                size: 20,
+                font: {
+                    size: 14,
+                    face: 'Microsoft YaHei'
+                },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 2,
+                smooth: {
+                    type: 'continuous',
+                    roundness: 0.5
+                },
+                arrows: {
+                    to: {
+                        enabled: true,
+                        scaleFactor: 0.8
+                    }
+                },
+                shadow: true
+            },
+            groups: {
+                atom: {
+                    color: { background: '#90CAF9', border: '#2196F3' },
+                    shape: 'ellipse',
+                    size: 25
+                },
+                composite: {
+                    color: { background: '#A5D6A7', border: '#4CAF50' },
+                    shape: 'box',
+                    size: 30
+                },
+                predicate: {
+                    color: { background: '#FFCC80', border: '#FF9800' },
+                    shape: 'diamond',
+                    size: 25
+                },
+                constructor: {
+                    color: { background: '#CE93D8', border: '#9C27B0' },
+                    shape: 'triangle',
+                    size: 25
+                },
+                term: {
+                    color: { background: '#EF9A9A', border: '#F44336' },
+                    shape: 'circle',
+                    size: 20
+                }
+            },
+            physics: {
+                enabled: true,
+                stabilization: {
+                    enabled: true,
+                    iterations: 200
+                },
+                barnesHut: {
+                    gravitationalConstant: -2000,
+                    centralGravity: 0.1,
+                    springLength: 200,
+                    springConstant: 0.04,
+                    damping: 0.09
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 100,
+                zoomView: true,
+                dragView: true
+            }
+        };
+
+        // 初始化网络函数
+        function initializeNetwork() {
+            // 确保vis库已加载
+            if (typeof vis === 'undefined') {
+                console.error('vis库未加载');
+                return;
+            }
+
+            // 创建网络
+            const container = document.getElementById('network-container');
+            if (!container) {
+                console.error('容器元素未找到');
+                return;
+            }
+
+            try {
+                const network = new vis.Network(container, data, options);
+                setupNetworkEvents(network);
+                window.network = network; // 保存到全局变量以便其他函数使用
+                applyStep(currentStep, false);   // 初始用功能一（无差异高亮），同步面板与滑块
+                var stateSlider = document.getElementById('state-slider');
+                if (stateSlider && !stateSlider._bound) {
+                    stateSlider._bound = true;
+                    stateSlider.addEventListener('input', function() {
+                        applyStepBySlider(parseInt(this.value, 10));
+                    });
+                }
+            } catch (error) {
+                console.error('创建网络失败:', error);
+                container.innerHTML = 
+                    '<div style="padding: 20px; text-align: center; color: red;">' +
+                    '<h3>知识图谱初始化失败</h3>' +
+                    '<p>错误: ' + error.message + '</p>' +
+                    '</div>';
+            }
+        }
+
+        // 设置网络事件
+        function setupNetworkEvents(network) {
+
+            // 节点点击事件
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = nodes.get(nodeId);
+                    showNodeInfo(node);
+                } else {
+                    hideNodeInfo();
+                }
+                });
+
+            // 双击空白处隐藏信息面板
+            network.on('doubleClick', function(params) {
+                if (params.nodes.length === 0) {
+                    hideNodeInfo();
+                }
+            });
+
+            console.log('知识图谱初始化成功');
+        }
+
+        // 页面加载完成后初始化
+        if (typeof vis !== 'undefined') {
+            // vis库已加载，直接初始化
+            initializeNetwork();
+        } else {
+            // 等待vis库加载
+            window.addEventListener('load', function() {
+                // 再次检查，如果还没加载则等待
+                if (typeof vis !== 'undefined') {
+                    initializeNetwork();
+                } else {
+                    // 延迟一点再试
+                    setTimeout(function() {
+                        if (typeof vis !== 'undefined') {
+                            initializeNetwork();
+                        } else {
+                            console.error('vis库加载超时');
+                            document.getElementById('network-container').innerHTML = 
+                                '<div style="padding: 20px; text-align: center; color: red;">' +
+                                '<h3>vis-network库加载超时</h3>' +
+                                '<p>请刷新页面重试，或检查网络连接</p>' +
+                                '</div>';
+                        }
+                    }, 500);
+                }
+            });
+        }
+
+        // 显示节点信息
+        function showNodeInfo(node) {
+            const panel = document.getElementById('info-panel');
+            const content = document.getElementById('info-content');
+            
+            content.innerHTML = `
+                <div class="info-item">
+                    <div class="info-label">名称:</div>
+                    <div class="info-value">${node.label}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">标题:</div>
+                    <div class="info-value">${node.title}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">描述:</div>
+                    <div class="info-value">${node.description}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">类别:</div>
+                    <div class="info-value">${getGroupName(node.group)}</div>
+                </div>
+            `;
+            
+            panel.style.display = 'block';
+        }
+
+        // 隐藏节点信息
+        function hideNodeInfo() {
+            document.getElementById('info-panel').style.display = 'none';
+        }
+
+        // 获取组名称
+        function getGroupName(group) {
+            const names = {
+                'atom': '基础原子类型',
+                'composite': '复合类型',
+                'predicate': '谓词类型',
+                'constructor': '构造函数',
+                'term': '项实例'
+            };
+            return names[group] || group;
+        }
+
+        // 重置视图
+        function resetView() {
+            if (window.network) {
+                window.network.fit({
+                    animation: {
+                        duration: 1000,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                });
+            }
+        }
+
+        // 适应窗口
+        function fitView() {
+            if (window.network) {
+                window.network.fit({
+                    animation: true
+                });
+            }
+        }
+
+        // 切换物理引擎
+        let physicsEnabled = true;
+        function togglePhysics() {
+            if (window.network) {
+                physicsEnabled = !physicsEnabled;
+                options.physics.enabled = physicsEnabled;
+                window.network.setOptions(options);
+            }
+        }
+
+        // 导出图片
+        function exportImage() {
+            if (window.network) {
+                try {
+                    const canvas = window.network.getCanvas();
+                    if (canvas) {
+                        const dataURL = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        link.download = 'kos-tl-knowledge-graph.png';
+                        link.href = dataURL;
+                        link.click();
+                    } else {
+                        alert('无法获取画布，请稍后再试');
+                    }
+                } catch (error) {
+                    alert('导出失败: ' + error.message);
+                }
+            } else {
+                alert('知识图谱未初始化');
+            }
+        }
+
+        function switchFeature(value) {
+            var traj = document.getElementById('trajectory-panel');
+            var diff = document.getElementById('diff-slider-panel');
+            var comp = document.getElementById('comparison-panel');
+            var graphArea = document.getElementById('graph-area');
+            if (value === 'trajectory') {
+                if (traj) traj.style.display = 'block';
+                if (diff) diff.style.display = 'none';
+                if (comp) comp.style.display = 'none';
+                if (graphArea) graphArea.style.display = 'block';
+                applyStep(currentStep, false);
+            } else if (value === 'diff') {
+                if (traj) traj.style.display = 'none';
+                if (diff) diff.style.display = 'block';
+                if (comp) comp.style.display = 'none';
+                if (graphArea) graphArea.style.display = 'block';
+                var s = document.getElementById('state-slider');
+                applyStep(s ? parseInt(s.value, 10) : 0, true);
+            } else if (value === 'comparison') {
+                if (traj) traj.style.display = 'none';
+                if (diff) diff.style.display = 'none';
+                if (comp) comp.style.display = 'block';
+                if (graphArea) graphArea.style.display = 'none';
+            }
+        }
+
+        (function bindFeatureMenu() {
+            var items = document.querySelectorAll('#feature-menu-float .menu-item');
+            function setActive(value) {
+                items.forEach(function(el) {
+                    el.classList.toggle('active', el.getAttribute('data-value') === value);
+                });
+            }
+            items.forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var v = this.getAttribute('data-value');
+                    switchFeature(v);
+                    setActive(v);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

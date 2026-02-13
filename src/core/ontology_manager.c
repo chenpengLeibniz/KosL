@@ -4,6 +4,7 @@
 
 #include "../../include/kos_ontology.h"
 #include "../../include/kos_core.h"
+#include "../../include/kos_core_bridge.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -230,6 +231,7 @@ static int expand_capacity(TypeOntology* ontology) {
 }
 
 // 添加类型定义
+// Core 层约束：type_def 必须为良构类型（仅由 Π/Σ/Sum/Prop/U/Type 构成），否则拒绝注册
 int kos_ontology_add_type_definition(TypeOntology* ontology,
                                      const char* name,
                                      kos_term* type_def,
@@ -237,7 +239,9 @@ int kos_ontology_add_type_definition(TypeOntology* ontology,
     if (!ontology || !name || !type_def) {
         return -1;
     }
-    
+    if (!kos_type_wellformed(type_def)) {
+        return -1;  /* 非法类型：不能建构的类型不得注册 */
+    }
     // 检查是否已存在
     if (kos_ontology_find_type_definition(ontology, name)) {
         return -1;  // 已存在
@@ -280,6 +284,29 @@ int kos_ontology_add_type_definition(TypeOntology* ontology,
     
     ontology->type_count++;
     return 0;
+}
+
+// 从 .kos 源字符串添加类型定义（经 kos-core 形式化校验）
+int kos_ontology_add_type_from_kos(TypeOntology* ontology,
+                                   const char* name,
+                                   const char* kos_type_expr,
+                                   kos_term* ctx,
+                                   char* errmsg,
+                                   size_t errmsg_size) {
+    if (!ontology || !name || !kos_type_expr) {
+        if (errmsg && errmsg_size > 0) snprintf(errmsg, errmsg_size, "Invalid arguments");
+        return -1;
+    }
+    kos_term* type_def = (kos_term*)kos_core_bridge_term_from_kos(kos_type_expr, errmsg, errmsg_size);
+    if (!type_def) {
+        return -1;  /* kos-core 校验失败，非法类型不能创建 */
+    }
+    int r = kos_ontology_add_type_definition(ontology, name, type_def, ctx);
+    kos_term_free(type_def);
+    if (r != 0 && errmsg && errmsg_size > 0) {
+        snprintf(errmsg, errmsg_size, "Type already exists or ontology error");
+    }
+    return r;
 }
 
 // 查找类型定义（返回类型定义的 kos_term*）
@@ -337,7 +364,7 @@ int kos_ontology_remove_type_definition(TypeOntology* ontology, const char* name
     return -1;  // 未找到
 }
 
-// 更新类型定义
+// 更新类型定义（仅良构类型，非法类型不能创建）
 int kos_ontology_update_type_definition(TypeOntology* ontology,
                                         const char* name,
                                         kos_term* new_type_def,
@@ -345,6 +372,9 @@ int kos_ontology_update_type_definition(TypeOntology* ontology,
     TypeDefinition* def = kos_ontology_get_type_definition_info(ontology, name);
     if (!def || !new_type_def) {
         return -1;
+    }
+    if (!kos_type_wellformed(new_type_def)) {
+        return -1;  /* 非法类型：不能建构的类型不得注册 */
     }
     
     // 释放旧的类型定义
@@ -953,8 +983,8 @@ TypeOntology* kos_ontology_deserialize(const char* json_str) {
             ctx = kos_term_deserialize(ctx_value);
         }
         
-        // 添加类型定义
-        if (name && type_def) {
+        // 添加类型定义（仅良构类型，非法类型不能创建）
+        if (name && type_def && kos_type_wellformed(type_def)) {
             kos_ontology_add_type_definition(ontology, name, type_def, ctx);
         }
         

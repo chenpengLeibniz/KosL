@@ -1,0 +1,10 @@
+-- Pi types, lambda, application, arrow
+-- Pi(x:A).B, lam (x:A).t, f a, A -> B
+
+module PiLam where
+
+type T : Type1
+def identity : T -> T := lam (x : T) . x
+
+def arrowType : Type1 := Prop P -> Prop Q
+def idOnProp : Prop P -> Prop P := lam (x : Prop P) . x

@@ -7,7 +7,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # 编译选项
 if(MSVC)
-    add_compile_options(/W4 /O2 /utf-8)
+    # 禁用运行时检查（与 /O2 不兼容）
+    add_compile_options(/W4 /O2 /utf-8 /RTC-)
 else()
     add_compile_options(-Wall -Wextra -O2)
 endif()
@@ -18,12 +19,10 @@ include_directories(../include)  # 包含主项目的头文件（如果需要）
 
 # KOS 核心源文件（需要链接）
 set(KOS_CORE_SOURCES
-    ../src/core/type_checker.c
-    ../src/core/reduction.c
-    ../src/core/substitution.c
     ../src/core/type_builder.c
     ../src/core/storage.c
     ../src/core/universe.c
+    ../src/core/core_kos_adapter.c
 )
 
 # 编译器源文件

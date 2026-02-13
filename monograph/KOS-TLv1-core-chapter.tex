@@ -1,0 +1,251 @@
+% 本章：core层的实现
+% 整合 kos-core 的完整技术文档
+
+\chapter{Core 层的实现}
+
+本章介绍 KOS-TL 的 Core 层在工程上的实现形式。当前实现采用 Haskell 语言，在 \texttt{kos-core/} 目录下形成独立的形式化内核，作为系统的“宪法”层，确保非法类型无法通过类型检查进入系统。
+
+\section{设计原则与架构}
+
+\subsection{设计原则}
+
+kos-core 遵循以下设计原则，与 Kos.pdf 中 Core 层的角色定位一致：
+
+\begin{itemize}
+\item \textbf{Parser 即门卫}：所有 Term 仅能通过解析 Core DSL（.kos 源文件）产生，非法语法无法生成 AST。
+\item \textbf{归纳构造}：代数数据类型（Algebraic Data Type）保证每个 Term 变体都有明确定义，无 $\bot$ 构造子。
+\item \textbf{类型检查即合法性}：\texttt{parseAndCheck} 通过后才产出合法 Term，失败则无输出。
+\item \textbf{双轴 Universe}：$\mathcal{U}_i$（计算轴）、$\textsf{Type}_i$（逻辑轴），对应 Kos.pdf 设计。
+\end{itemize}
+
+\subsection{目录结构}
+
+\begin{verbatim}
+kos-core/
+├── src/
+│   ├── KosCore.hs          -- 主模块，对外 API
+│   └── KosCore/
+│       ├── AST.hs          -- Term 代数数据类型
+│       ├── Universe.hs     -- 双轴 Universe
+│       ├── Context.hs       -- 类型上下文
+│       ├── Substitution.hs -- 变量替换
+│       ├── Reduction.hs    -- β/ι/δ/ζ/η 归约
+│       ├── TypeCheck.hs    -- 双向类型检查
+│       ├── Parser.hs       -- 语法分析
+│       ├── Alpha.hs        -- α 等价
+│       └── JSON.hs          -- JSON 序列化
+├── app/Main.hs             -- CLI 入口
+└── examples/               -- .kos 示例
+\end{verbatim}
+
+\section{语法与类型构造}
+
+\subsection{类型构造（Types）}
+
+与 Kos.pdf 的 Core 层语法对应，kos-core 实现的类型构造如表\ref{tab:core-types}所示。
+
+\begin{table}[h]
+\centering
+\caption{Kos.pdf 类型构造与 kos-core 实现对照}
+\label{tab:core-types}
+\begin{tabular}{lll}
+\toprule
+\textbf{Kos.pdf 定义} & \textbf{kos-core 实现} & \textbf{状态} \\
+\midrule
+$\textsf{Prop}$ & \texttt{Prop Text} & 已实现 \\
+$\textsf{Type}_i$ & \texttt{Universe Logical i} & 已实现 \\
+$\mathcal{U}_i$ & \texttt{Universe Computational i} & 已实现 \\
+$\textsf{Val}, \textsf{Time}, \textsf{ID}$ & \texttt{Val}, \texttt{Time}, \texttt{Ident} & 已实现 \\
+$\Pi(x:A).B$ & \texttt{Pi Text Term Term} & 已实现 \\
+$\Sigma(x:A).B$ & \texttt{Sigma Text Term Term} & 已实现 \\
+$A + B$ & \texttt{Sum Term Term} & 已实现 \\
+$\textsf{Id}_A(a, b)$ & \texttt{Id Term Term Term} & 已实现 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{项构造（Terms）}
+
+\begin{table}[h]
+\centering
+\caption{Kos.pdf 项构造与 kos-core 实现对照}
+\label{tab:core-terms}
+\begin{tabular}{lll}
+\toprule
+\textbf{Kos.pdf 定义} & \textbf{kos-core 实现} & \textbf{状态} \\
+\midrule
+$x$（变量） & \texttt{Var Text} & 已实现 \\
+$\lambda x.t$, $t\,u$ & \texttt{Lam}, \texttt{App} & 已实现 \\
+$\langle t, u \rangle$ & \texttt{Pair Term Term} & 已实现 \\
+$\textsf{split}(t, x.y.u)$ & \texttt{Split Term Text Text Term} & 已实现 \\
+$\textsf{inl}(t)$, $\textsf{inr}(t)$ & \texttt{InL}, \texttt{InR}；\texttt{InLS}, \texttt{InRS} & 已实现 \\
+$\textsf{case}(t, x.u, y.v)$ & \texttt{Case Term Text Text Text Term} & 已实现 \\
+$\textsf{refl}$（Id 引入） & \texttt{Refl Term} & 已实现 \\
+$\textsf{let } x=u \textsf{ in } t$ & \texttt{Let Text Term Term Term} & 已实现 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{值依赖谓词（扩展）}
+
+kos-core 在 Kos.pdf 未定义的语法基础上，增加了值依赖谓词（Value-Dependent Predicates），使类型构造可依赖项的具体数值：
+
+\begin{itemize}
+\item \texttt{gt(a, b)}：$a > b$，当 $a$、$b$ 可解析为数值时成立则类型良构。
+\item \texttt{ge(a, b)}：$a \ge b$
+\item \texttt{lt(a, b)}：$a < b$
+\item \texttt{le(a, b)}：$a \le b$
+\item \texttt{eq(a, b)}：$a = b$（支持数值或字符串相等）
+\end{itemize}
+
+例如 \texttt{gt(val "200", val "180")} 表示命题“200 > 180”，类型检查时会对两边的值进行求值比较，成立则接受。
+
+\section{.kos 语言语法}
+
+\subsection{模块结构}
+
+\begin{verbatim}
+module ModuleName where
+  type Name : Kind
+  def name : Type := term
+\end{verbatim}
+
+\texttt{type} 声明类型别名，\texttt{def} 声明项定义（支持 $\delta$ 归约）。
+
+\subsection{原子类型与 Base Sorts}
+
+\begin{itemize}
+\item \texttt{Prop P}：命题，$\textsf{Prop} : \textsf{Type}_1$
+\item \texttt{U0}, \texttt{U1}, \texttt{U}：计算轴 Universe
+\item \texttt{Type0}, \texttt{Type1}, \texttt{Type}：逻辑轴 Universe
+\item \texttt{val "x"}：值字面量
+\item \texttt{time "2025-01-01"}：时间字面量
+\item \texttt{id "BATCH1"}：标识符字面量
+\end{itemize}
+
+\subsection{Π 类型与 λ}
+
+\begin{itemize}
+\item \texttt{Pi(x:A). B} 或 \texttt{Π(x:A). B}：依赖函数类型
+\item \texttt{A -> B}：箭头简写（非依赖）
+\item \texttt{lam (x:A) . t}：$\lambda$ 抽象
+\item \texttt{f a}：函数应用
+\end{itemize}
+
+\subsection{Σ 类型}
+
+\begin{itemize}
+\item \texttt{Sigma(x:A). B}：依赖对类型
+\item \texttt{<d, p>}：对构造
+\item \texttt{split (p) as x y in body}：$\Sigma$ 消除
+\end{itemize}
+
+\subsection{Sum 类型}
+
+\begin{itemize}
+\item \texttt{A + B}：不交并
+\item \texttt{inl(A,B,v)}, \texttt{inr(A,B,v)}：显式类型注入
+\item \texttt{inl v}, \texttt{inr v}：单参数注入（需 check 模式）
+\item \texttt{case s of inl x -> t1; inr y -> t2}：Sum 消除
+\end{itemize}
+
+\subsection{Id 类型与 Let}
+
+\begin{itemize}
+\item \texttt{Id(A,a,b)}：恒等类型
+\item \texttt{refl w}：自反证明
+\item \texttt{let x : A := v in body}：Let 绑定（$\zeta$ 归约）
+\end{itemize}
+
+\section{推导规则与归约}
+
+\subsection{推导规则实现}
+
+TypeCheck.hs 实现双向类型检查（infer/check），对应 Kos.pdf 的推导规则：
+
+\begin{itemize}
+\item \textbf{Π 引入}：\texttt{Lam} 分支，\texttt{check ctx' bodyTerm bodyTy}
+\item \textbf{Π 消除}：\texttt{App} 分支，\texttt{Right (substitute x a body)}
+\item \textbf{Σ 引入}：\texttt{Pair}，\texttt{check ctx d dom}，\texttt{check ctx p (substitute x d body)}
+\item \textbf{Σ 消除}：\texttt{Split (Pair d p) x1 x2 body} $\to$ \texttt{substitute x2 p (substitute x1 d body)}
+\item \textbf{Conversion}：\texttt{check} 结构失败时 fallback：\texttt{infer} + \texttt{definitionallyEqual}
+\end{itemize}
+
+\subsection{归约规则实现}
+
+Reduction.hs 实现 $\beta$、$\iota$、$\delta$、$\zeta$、$\eta$：
+
+\begin{itemize}
+\item $\beta$：\texttt{App (Lam x \_ body) arg -> substitute x arg body}
+\item $\iota$（Σ）：\texttt{Split (Pair d p) x1 x2 body -> substitute x2 p (substitute x1 d body)}
+\item $\iota$（Sum）：\texttt{Case (InL ...)} 与 \texttt{Case (InR ...)} 分支
+\item $\delta$：\texttt{Var x -> ctxLookupDef x ctx}
+\item $\zeta$：\texttt{Let x \_ty val body -> substitute x val body}
+\item $\eta$：\texttt{Lam x ty (App f (Var y))} 当 $y=x$ 且 $x \notin \text{FV}(f)$ 时归约为 \texttt{f}
+\end{itemize}
+
+定义等价 \texttt{definitionallyEqual} = \texttt{normalize} + $\alpha$ 等价。
+
+\section{双轴 Universe 系统}
+
+Universe.hs 实现：
+
+\begin{itemize}
+\item $\textsf{Prop} : \textsf{Type}_1$
+\item $\textsf{Type}_i : \textsf{Type}_{i+1}$，$\mathcal{U}_i : \mathcal{U}_{i+1}$
+\item $\mathcal{U}_i : \textsf{Type}_{i+1}$（计算轴可提升到逻辑轴）
+\item $\textsf{Prop} \hookrightarrow \mathcal{U}_1$（\texttt{propEmbedToData}）
+\item Impredicativity：$\Pi(x:A).B : \textsf{Prop}$ 当 $B : \textsf{Prop}$
+\end{itemize}
+
+\section{与 C Runtime 的集成}
+
+kos-core 作为独立可执行文件，通过 C Bridge（\texttt{kos\_core\_bridge.h}）与 Kernel/Runtime 层集成：
+
+\begin{itemize}
+\item \texttt{kos\_core\_bridge\_check\_expr}：对 .kos 表达式进行类型检查
+\item \texttt{kos\_core\_bridge\_term\_from\_kos}：解析并校验后返回 JSON 序列化
+\item \texttt{kos\_core\_bridge\_infer\_from\_kos}：类型推断
+\end{itemize}
+
+C 层在添加类型定义、精化信号时，可调用上述接口，确保仅合法类型进入系统。
+
+\section{实现状态与 Kos.pdf 对照}
+
+表\ref{tab:core-comparison}总结 kos-core 与 Kos.pdf 的对照情况。
+
+\begin{table}[h]
+\centering
+\caption{kos-core 与 Kos.pdf 实现对照}
+\label{tab:core-comparison}
+\begin{tabular}{lll}
+\toprule
+\textbf{维度} & \textbf{Kos.pdf 要求} & \textbf{kos-core 实现} \\
+\midrule
+类型构造 & Prop, Type$_i$, U$_i$, Val, Time, ID, Π, Σ, +, Id & 已实现 \\
+项构造 & λ, app, pair, split, inl, inr, case, refl, let & 已实现 \\
+Universe & 双轴、Prop↪U₁、Impredicativity & 已实现 \\
+归约 & $\beta$, $\iota$, $\delta$, $\zeta$, $\eta$ & 已实现 \\
+Conversion & $\Gamma \vdash t:A$, $A \equiv B$ $\Rightarrow$ $\Gamma \vdash t:B$ & 已实现 \\
+元理论 & SN, Subject Reduction, Confluence & 无形式化证明 \\
+本体管理 & 业务本体 $\to$ Sorts/类型 & 未实现 \\
+计算自反性 & 自动合成 Id 证明 & 部分：有 Id/Refl，无自动证明合成 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{已知简化}
+
+\begin{itemize}
+\item \textbf{Π 类型推断}：\texttt{infer} 对 Π 构造统一返回 \texttt{Type₁}；Kos.pdf 规定 predicative 情形为 $\Pi(x:A).B : \textsf{Type}_{\max(i,j)}$。
+\item \textbf{Pair 类型推断}：对依赖 $B(x)$ 的 $\Sigma$ 类型做了简化。
+\end{itemize}
+
+\subsection{进一步改进方向}
+
+\begin{itemize}
+\item J 消除子：Id 类型的依赖消除（J rule），当前仅支持 refl 引入
+\item 元理论形式化：SN、Subject Reduction、Confluence 的机器可验证证明
+\item 本体管理器：业务本体 $\to$ Sorts/类型 的 TypeOntology 模块
+\item 计算自反性自动合成：归约时自动合成 $\textsf{Id}(t,t')$ 证明
+\end{itemize}

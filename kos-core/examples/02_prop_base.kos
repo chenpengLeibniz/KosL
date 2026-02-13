@@ -1,0 +1,12 @@
+-- Prop (propositions) and Base Sorts: val, time, id
+-- Prop P : Type1, val/time/id : U0
+
+module PropBase where
+
+type P : Type1
+def propP : Prop P := Prop P
+
+type DataSort : U0
+def v : DataSort := val "batch-001"
+def t : DataSort := time "2025-01-01"
+def i : DataSort := id "BATCH1"

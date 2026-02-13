@@ -1,0 +1,246 @@
+\contentsline {chapter}{\numberline {1}绪论}{1}{chapter.1}
+\contentsline {section}{\numberline {1.1}面向知识操作的逻辑新需求}{1}{section.1.1}
+\contentsline {section}{\numberline {1.2}知识与知识操作逻辑综述}{2}{section.1.2}
+\contentsline {subsection}{\numberline {1.2.1}知识逻辑研究的历史脉络}{2}{subsection.1.2.1}
+\contentsline {subsection}{\numberline {1.2.2}知识逻辑研究中的难点}{3}{subsection.1.2.2}
+\contentsline {subsubsection}{\numberline {1.2.2.1}可判定性与表达力的张力}{3}{subsubsection.1.2.2.1}
+\contentsline {subsubsection}{\numberline {1.2.2.2}开放世界与封闭世界的冲突}{4}{subsubsection.1.2.2.2}
+\contentsline {subsubsection}{\numberline {1.2.2.3}动态更新与一致性的代价}{4}{subsubsection.1.2.2.3}
+\contentsline {subsubsection}{\numberline {1.2.2.4}证据缺失与追溯薄弱}{4}{subsubsection.1.2.2.4}
+\contentsline {subsubsection}{\numberline {1.2.2.5}规模、复杂度与工程可行性}{4}{subsubsection.1.2.2.5}
+\contentsline {chapter}{\numberline {2}文献综述}{5}{chapter.2}
+\contentsline {section}{\numberline {2.1}引言：类型论与知识操作}{5}{section.2.1}
+\contentsline {subsection}{\numberline {2.1.1}类型论发展的时间线与文献脉络}{5}{subsection.2.1.1}
+\contentsline {section}{\numberline {2.2}纯类型系统与 $\lambda $ 立方体}{6}{section.2.2}
+\contentsline {subsection}{\numberline {2.2.1}纯类型系统的统一框架}{6}{subsection.2.2.1}
+\contentsline {subsection}{\numberline {2.2.2}$\lambda $ 立方体与依赖性的层次}{6}{subsection.2.2.2}
+\contentsline {section}{\numberline {2.3}依赖类型论谱系：从 CoC 到 MLTT}{6}{section.2.3}
+\contentsline {subsection}{\numberline {2.3.1}构造演算的核心理论架构}{6}{subsection.2.3.1}
+\contentsline {subsection}{\numberline {2.3.2}Martin-Löf 类型论的核心架构}{7}{subsection.2.3.2}
+\contentsline {subsection}{\numberline {2.3.3}对知识操作的含义}{7}{subsection.2.3.3}
+\contentsline {section}{\numberline {2.4}逻辑框架：从 LF 到 Twelf}{8}{section.2.4}
+\contentsline {subsection}{\numberline {2.4.1}LF 的核心理论架构}{8}{subsection.2.4.1}
+\contentsline {subsection}{\numberline {2.4.2}扩展与局限}{8}{subsection.2.4.2}
+\contentsline {section}{\numberline {2.5}类型论与操作语义的统一：Harper 的 PFPL}{8}{section.2.5}
+\contentsline {subsection}{\numberline {2.5.1}PFPL 的核心框架}{8}{subsection.2.5.1}
+\contentsline {section}{\numberline {2.6}同伦类型论与等价概念}{9}{section.2.6}
+\contentsline {subsection}{\numberline {2.6.1}HoTT 的核心理论架构}{9}{subsection.2.6.1}
+\contentsline {section}{\numberline {2.7}带效应的类型论与 Hoare 类型论}{9}{section.2.7}
+\contentsline {subsection}{\numberline {2.7.1}HTT 的核心理论架构}{9}{subsection.2.7.1}
+\contentsline {section}{\numberline {2.8}线性逻辑与资源语义}{10}{section.2.8}
+\contentsline {subsection}{\numberline {2.8.1}线性逻辑的核心架构}{10}{subsection.2.8.1}
+\contentsline {section}{\numberline {2.9}动态逻辑与程序验证}{10}{section.2.9}
+\contentsline {subsection}{\numberline {2.9.1}动态逻辑的核心架构}{10}{subsection.2.9.1}
+\contentsline {section}{\numberline {2.10}事件溯源与确定性重放}{10}{section.2.10}
+\contentsline {section}{\numberline {2.11}知识表示与描述逻辑}{10}{section.2.11}
+\contentsline {section}{\numberline {2.12}体系对比矩阵与结构差异}{11}{section.2.12}
+\contentsline {section}{\numberline {2.13}KOS-TL 的定位：知识操作理论的创新}{11}{section.2.13}
+\contentsline {section}{\numberline {2.14}小结}{11}{section.2.14}
+\contentsline {chapter}{\numberline {3}KOS-TL 的分层形式化定义}{13}{chapter.3}
+\contentsline {section}{\numberline {3.1}L0: Core（核心层）—— 静态逻辑论域}{13}{section.3.1}
+\contentsline {section}{\numberline {3.2}L0: Core（核心层）—— 静态逻辑论域}{13}{section.3.2}
+\contentsline {subsection}{\numberline {3.2.1}核心层需求分析与逻辑构造}{13}{subsection.3.2.1}
+\contentsline {subsection}{\numberline {3.2.2}总体架构描述}{14}{subsection.3.2.2}
+\contentsline {subsection}{\numberline {3.2.3}关键设计决策}{14}{subsection.3.2.3}
+\contentsline {section}{\numberline {3.3}L1: Kernel（内核层）—— 操作语义论域}{15}{section.3.3}
+\contentsline {subsection}{\numberline {3.3.1}内核层需求建模：动态演化与状态确定性}{15}{subsection.3.3.1}
+\contentsline {subsection}{\numberline {3.3.2}设计方法论：小步操作语义与状态机模型}{15}{subsection.3.3.2}
+\contentsline {subsection}{\numberline {3.3.3}总体架构描述}{15}{subsection.3.3.3}
+\contentsline {subsection}{\numberline {3.3.4}关键设计决策}{16}{subsection.3.3.4}
+\contentsline {section}{\numberline {3.4}L2: Runtime（运行时层）—— 系统演化论域}{16}{section.3.4}
+\contentsline {subsection}{\numberline {3.4.1}需求建模：物理保真与环境精化}{16}{subsection.3.4.1}
+\contentsline {subsection}{\numberline {3.4.2}设计方法论：双向映射中的精化与物化}{16}{subsection.3.4.2}
+\contentsline {subsection}{\numberline {3.4.3}总体架构描述}{17}{subsection.3.4.3}
+\contentsline {subsection}{\numberline {3.4.4}关键设计决策}{17}{subsection.3.4.4}
+\contentsline {chapter}{\numberline {4}KOS-TL 核心层 (Core Layer)：静态逻辑基础}{19}{chapter.4}
+\contentsline {section}{\numberline {4.1}语法 (Syntax)}{19}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}1. 论域($\mathcal {D}_{Core}$)}{19}{subsection.4.1.1}
+\contentsline {subsection}{\numberline {4.1.2}2. 语法}{19}{subsection.4.1.2}
+\contentsline {subsection}{\numberline {4.1.3}3. 判定规则 (Judgmental Rules)}{22}{subsection.4.1.3}
+\contentsline {subsection}{\numberline {4.1.4}4. 规约规则}{23}{subsection.4.1.4}
+\contentsline {section}{\numberline {4.2}核心层逻辑性质}{25}{section.4.2}
+\contentsline {section}{\numberline {4.3}应用示例：质量异常知识建模}{40}{section.4.3}
+\contentsline {chapter}{\numberline {5}KOS-TL 内核层 (Kernel Layer)：状态演化与操作语义}{43}{chapter.5}
+\contentsline {section}{\numberline {5.1}语法 (Syntax)}{43}{section.5.1}
+\contentsline {section}{\numberline {5.2}操作语义}{45}{section.5.2}
+\contentsline {section}{\numberline {5.3}状态 $\sigma $ 的全面描述与形式化框架}{47}{section.5.3}
+\contentsline {subsection}{\numberline {5.3.1}状态 $\sigma $ 的本质与特性}{48}{subsection.5.3.1}
+\contentsline {subsubsection}{\numberline {5.3.1.1}逻辑快照与轨迹依赖}{48}{subsubsection.5.3.1.1}
+\contentsline {subsection}{\numberline {5.3.2}状态 $\sigma $ 的形式化定义}{48}{subsection.5.3.2}
+\contentsline {subsubsection}{\numberline {5.3.2.1}状态的最小记录类型（Record Type）}{48}{subsubsection.5.3.2.1}
+\contentsline {subsubsection}{\numberline {5.3.2.2}状态的演化算子}{48}{subsubsection.5.3.2.2}
+\contentsline {subsection}{\numberline {5.3.3}状态与轨迹的交互逻辑}{48}{subsection.5.3.3}
+\contentsline {subsubsection}{\numberline {5.3.3.1}投影关系：$\mathsf {StateOf}$}{48}{subsubsection.5.3.3.1}
+\contentsline {subsubsection}{\numberline {5.3.3.2}轨迹关系对状态的影响}{48}{subsubsection.5.3.3.2}
+\contentsline {subsection}{\numberline {5.3.4}非单调环境下的回滚与路径重构}{48}{subsection.5.3.4}
+\contentsline {subsection}{\numberline {5.3.5}量化范式：KOS-TL vs. 时序逻辑}{49}{subsection.5.3.5}
+\contentsline {subsection}{\numberline {5.3.6}结论：$\sigma $ 的本体论地位}{49}{subsection.5.3.6}
+\contentsline {section}{\numberline {5.4}轨迹与路径在 KOS-TL 中的形式化描述}{49}{section.5.4}
+\contentsline {subsection}{\numberline {5.4.1}轨迹的形式化定义}{49}{subsection.5.4.1}
+\contentsline {subsubsection}{\numberline {5.4.1.1}基本定义：作为依赖和类型的轨迹}{49}{subsubsection.5.4.1.1}
+\contentsline {subsubsection}{\numberline {5.4.1.2}Step 算子的构造语义}{49}{subsubsection.5.4.1.2}
+\contentsline {subsubsection}{\numberline {5.4.1.3}知识在轨迹中的地位}{50}{subsubsection.5.4.1.3}
+\contentsline {subsection}{\numberline {5.4.2}轨迹的代数属性：等价与包含}{50}{subsection.5.4.2}
+\contentsline {subsubsection}{\numberline {5.4.2.1}轨迹等价（Trace Equivalence）}{50}{subsubsection.5.4.2.1}
+\contentsline {subsubsection}{\numberline {5.4.2.2}轨迹包含（Trace Inclusion）}{50}{subsubsection.5.4.2.2}
+\contentsline {subsection}{\numberline {5.4.3}回滚机制：逻辑回归与路径切换}{50}{subsection.5.4.3}
+\contentsline {subsection}{\numberline {5.4.4}轨迹量化：KOS-TL 与时序逻辑（LTL/CTL）的对比}{50}{subsection.5.4.4}
+\contentsline {section}{\numberline {5.5}通用算子}{51}{section.5.5}
+\contentsline {subsection}{\numberline {5.5.1}1. 状态投影算子 (State Projection Operators)}{51}{subsection.5.5.1}
+\contentsline {subsection}{\numberline {5.5.2}2. 意图调度算子 (Intention Scheduling Operators)}{51}{subsection.5.5.2}
+\contentsline {subsection}{\numberline {5.5.3}3. 演化控制算子 (Evolution Control Operators)}{51}{subsection.5.5.3}
+\contentsline {subsection}{\numberline {5.5.4}4. 因果追溯算子 (Causal \& Trace Operators)}{52}{subsection.5.5.4}
+\contentsline {section}{\numberline {5.6}证明搜索机（Proof-Search Machine, PSM）}{52}{section.5.6}
+\contentsline {subsection}{\numberline {5.6.1}基本类型与谓词}{52}{subsection.5.6.1}
+\contentsline {subsection}{\numberline {5.6.2}证明搜索目标}{53}{subsection.5.6.2}
+\contentsline {subsection}{\numberline {5.6.3}机器配置}{53}{subsection.5.6.3}
+\contentsline {subsection}{\numberline {5.6.4}小步证明搜索语义}{53}{subsection.5.6.4}
+\contentsline {paragraph}{（$\Sigma $-展开规则：存在性搜索）}{53}{subsection.5.6.4}
+\contentsline {paragraph}{（因果证明引入规则）}{53}{subsection.5.6.4}
+\contentsline {paragraph}{（合取分解规则）}{53}{subsection.5.6.4}
+\contentsline {paragraph}{（原子谓词判定）}{53}{subsection.5.6.4}
+\contentsline {paragraph}{（目标完成）}{54}{subsection.5.6.4}
+\contentsline {paragraph}{（失败规则）}{54}{subsection.5.6.4}
+\contentsline {subsection}{\numberline {5.6.5}接受条件}{54}{subsection.5.6.5}
+\contentsline {subsection}{\numberline {5.6.6}语义解释}{54}{subsection.5.6.6}
+\contentsline {section}{\numberline {5.7}内核层逻辑性质}{54}{section.5.7}
+\contentsline {section}{\numberline {5.8}应用示例：质量异常溯源派生}{59}{section.5.8}
+\contentsline {chapter}{\numberline {6}KOS-TL 运行层 (Runtime Layer)：环境交互与信号精化}{61}{chapter.6}
+\contentsline {section}{\numberline {6.1}语法 (Syntax)}{61}{section.6.1}
+\contentsline {section}{\numberline {6.2}运行语义 (Runtime Semantics)}{62}{section.6.2}
+\contentsline {section}{\numberline {6.3}逻辑性质 (Logical Properties)}{62}{section.6.3}
+\contentsline {section}{\numberline {6.4}应用示例：乱序日志的因果修复}{68}{section.6.4}
+\contentsline {chapter}{\numberline {7}KOS-TL系统}{71}{chapter.7}
+\contentsline {section}{\numberline {7.1}总体架构}{71}{section.7.1}
+\contentsline {subsection}{\numberline {7.1.1}Core 层：类型定义与逻辑基座 (The Denotational Foundation)}{71}{subsection.7.1.1}
+\contentsline {subsection}{\numberline {7.1.2}Kernel 层：动态演化与意图调度 (The Operational Engine)}{71}{subsection.7.1.2}
+\contentsline {subsection}{\numberline {7.1.3}Runtime 层：环境精化与物理执行 (The Physical Interface)}{71}{subsection.7.1.3}
+\contentsline {subsection}{\numberline {7.1.4}架构全局不变式 (Global Invariant)}{71}{subsection.7.1.4}
+\contentsline {section}{\numberline {7.2}KOS-TL的最小内核}{72}{section.7.2}
+\contentsline {subsection}{\numberline {7.2.1}事件入口接口 (Event Intake Interface)}{72}{subsection.7.2.1}
+\contentsline {subsection}{\numberline {7.2.2}世界状态接口 (World State Interface)}{72}{subsection.7.2.2}
+\contentsline {subsection}{\numberline {7.2.3}规则与合规接口 (Normative Rule Interface)}{72}{subsection.7.2.3}
+\contentsline {subsection}{\numberline {7.2.4}执行与轨迹接口 (Trace Interface)}{72}{subsection.7.2.4}
+\contentsline {subsection}{\numberline {7.2.5}决策输出接口 (Decision Interface)}{72}{subsection.7.2.5}
+\contentsline {section}{\numberline {7.3}全局交互协议 (Global Interaction Protocol)}{72}{section.7.3}
+\contentsline {subsection}{\numberline {7.3.1}阶段 I：精化与注入 (Refinement \& Injection)}{72}{subsection.7.3.1}
+\contentsline {subsection}{\numberline {7.3.2}阶段 II：内核入队与排序 (Kernel Enqueue \& Sequencing)}{72}{subsection.7.3.2}
+\contentsline {subsection}{\numberline {7.3.3}阶段 III：逻辑规约与判定 (Reduction \& Judgment)}{73}{subsection.7.3.3}
+\contentsline {subsection}{\numberline {7.3.4}阶段 IV：原子物化与持久化 (Materialization \& Persistence)}{73}{subsection.7.3.4}
+\contentsline {section}{\numberline {7.4}交互界面}{73}{section.7.4}
+\contentsline {subsection}{\numberline {7.4.1}Core 与 Kernel 的交互界面：类型判定接口 ($\textsf {Logic-Kernel Interface}$)}{73}{subsection.7.4.1}
+\contentsline {subsection}{\numberline {7.4.2}Kernel 与 Runtime 的交互界面：演化驱动接口 ($\textsf {Kernel-Runtime Interface}$)}{74}{subsection.7.4.2}
+\contentsline {subsection}{\numberline {7.4.3}Core 与 Runtime 的横向依存：精化模板接口 ($\textsf {Refinement Interface}$)}{74}{subsection.7.4.3}
+\contentsline {section}{\numberline {7.5}系统性质}{74}{section.7.5}
+\contentsline {section}{\numberline {7.6}Trace = Proof 定理}{77}{section.7.6}
+\contentsline {section}{\numberline {7.7}KOS-TL的核心适用场景}{78}{section.7.7}
+\contentsline {subsection}{\numberline {7.7.1}根因追溯 (Root Cause Analysis)}{78}{subsection.7.7.1}
+\contentsline {subsection}{\numberline {7.7.2}反事实推理 (Counterfactual Reasoning)}{78}{subsection.7.7.2}
+\contentsline {subsection}{\numberline {7.7.3}合规性决策系统 (Normative Decision Systems)}{78}{subsection.7.7.3}
+\contentsline {subsection}{\numberline {7.7.4}审计与问责 (Audit and Accountability)}{78}{subsection.7.7.4}
+\contentsline {subsection}{\numberline {7.7.5}复杂系统运行与治理 (Complex Systems Governance)}{79}{subsection.7.7.5}
+\contentsline {subsection}{\numberline {7.7.6}AI 治理与可信性 (AI Governance and Trustworthy AI)}{79}{subsection.7.7.6}
+\contentsline {section}{\numberline {7.8}KOS-TL 在知识全生命周期中的本体论角色}{79}{section.7.8}
+\contentsline {subsection}{\numberline {7.8.1}核心定义：作为“操作宪法”的执行内核}{79}{subsection.7.8.1}
+\contentsline {subsection}{\numberline {7.8.2}知识发现阶段：作为合法性过滤器}{79}{subsection.7.8.2}
+\contentsline {subsection}{\numberline {7.8.3}知识生成阶段：作为知识生成机制本身}{79}{subsection.7.8.3}
+\contentsline {subsection}{\numberline {7.8.4}知识演化阶段：作为时间化的知识本体}{80}{subsection.7.8.4}
+\contentsline {subsection}{\numberline {7.8.5}知识失效与判定阶段：作为裁决系统}{80}{subsection.7.8.5}
+\contentsline {subsection}{\numberline {7.8.6}知识全生命周期抽象图景总结}{80}{subsection.7.8.6}
+\contentsline {subsection}{\numberline {7.8.7}结论：哲学层面的重构}{80}{subsection.7.8.7}
+\contentsline {section}{\numberline {7.9}KOS-TL 对知识非单调性的支持与重构}{81}{section.7.9}
+\contentsline {subsection}{\numberline {7.9.1}非单调性的内生表现}{81}{subsection.7.9.1}
+\contentsline {subsection}{\numberline {7.9.2}KOS-TL 非单调性的必然性}{81}{subsection.7.9.2}
+\contentsline {subsection}{\numberline {7.9.3}与经典非单调逻辑的根本差异}{81}{subsection.7.9.3}
+\contentsline {subsubsection}{\numberline {7.9.3.1}与默认逻辑（Default Logic）的区别}{81}{subsubsection.7.9.3.1}
+\contentsline {subsubsection}{\numberline {7.9.3.2}与 AGM 信念修正的区别}{81}{subsubsection.7.9.3.2}
+\contentsline {subsubsection}{\numberline {7.9.3.3}与 ASP（Answer Set Programming）的区别}{82}{subsubsection.7.9.3.3}
+\contentsline {subsection}{\numberline {7.9.4}结论：非单调性的本质}{82}{subsection.7.9.4}
+\contentsline {subsection}{\numberline {7.9.5}哲学落点：责任驱动的知识论}{82}{subsection.7.9.5}
+\contentsline {section}{\numberline {7.10}特性与应用}{82}{section.7.10}
+\contentsline {chapter}{\numberline {8}Core 层的实现}{85}{chapter.8}
+\contentsline {section}{\numberline {8.1}设计原则与架构}{85}{section.8.1}
+\contentsline {subsection}{\numberline {8.1.1}设计原则}{85}{subsection.8.1.1}
+\contentsline {subsection}{\numberline {8.1.2}整体架构与数据流}{85}{subsection.8.1.2}
+\contentsline {subsection}{\numberline {8.1.3}目录结构}{85}{subsection.8.1.3}
+\contentsline {section}{\numberline {8.2}语法与类型构造}{86}{section.8.2}
+\contentsline {subsection}{\numberline {8.2.1}类型构造（Types）}{86}{subsection.8.2.1}
+\contentsline {subsection}{\numberline {8.2.2}项构造（Terms）}{86}{subsection.8.2.2}
+\contentsline {subsection}{\numberline {8.2.3}值依赖谓词（扩展）}{86}{subsection.8.2.3}
+\contentsline {section}{\numberline {8.3}.kos 语言语法}{87}{section.8.3}
+\contentsline {subsection}{\numberline {8.3.1}模块结构}{87}{subsection.8.3.1}
+\contentsline {subsection}{\numberline {8.3.2}原子类型与 Base Sorts}{87}{subsection.8.3.2}
+\contentsline {subsection}{\numberline {8.3.3}Π 类型与 λ}{87}{subsection.8.3.3}
+\contentsline {subsection}{\numberline {8.3.4}Σ 类型}{87}{subsection.8.3.4}
+\contentsline {subsection}{\numberline {8.3.5}Sum 类型}{87}{subsection.8.3.5}
+\contentsline {subsection}{\numberline {8.3.6}Id 类型与 Let}{88}{subsection.8.3.6}
+\contentsline {section}{\numberline {8.4}推导规则与归约}{88}{section.8.4}
+\contentsline {subsection}{\numberline {8.4.1}推导规则实现}{88}{subsection.8.4.1}
+\contentsline {subsection}{\numberline {8.4.2}归约规则实现}{88}{subsection.8.4.2}
+\contentsline {section}{\numberline {8.5}证明自动化（Proof 模块）}{88}{section.8.5}
+\contentsline {subsection}{\numberline {8.5.1}策略与类型}{88}{subsection.8.5.1}
+\contentsline {subsection}{\numberline {8.5.2}策略顺序与含义}{89}{subsection.8.5.2}
+\contentsline {subsection}{\numberline {8.5.3}候选与 exact}{89}{subsection.8.5.3}
+\contentsline {subsection}{\numberline {8.5.4}与知识操作的衔接}{89}{subsection.8.5.4}
+\contentsline {section}{\numberline {8.6}双轴 Universe 系统}{89}{section.8.6}
+\contentsline {section}{\numberline {8.7}与 C Runtime 的集成}{89}{section.8.7}
+\contentsline {section}{\numberline {8.8}实现状态与 Kos.pdf 对照}{90}{section.8.8}
+\contentsline {subsection}{\numberline {8.8.1}已知简化}{90}{subsection.8.8.1}
+\contentsline {subsection}{\numberline {8.8.2}进一步改进方向}{90}{subsection.8.8.2}
+\contentsline {chapter}{\numberline {9}KOS-TL的应用示例}{91}{chapter.9}
+\contentsline {section}{\numberline {9.1}KOS-TL的应用过程}{92}{section.9.1}
+\contentsline {subsection}{\numberline {9.1.1}内核层：规则定义与逻辑约束}{92}{subsection.9.1.1}
+\contentsline {subsection}{\numberline {9.1.2}运行时层：数据抓取与对象精化（Elaboration）}{94}{subsection.9.1.2}
+\contentsline {subsection}{\numberline {9.1.3}核心层：证明构造与小步演化}{95}{subsection.9.1.3}
+\contentsline {section}{\numberline {9.2}KOS-TL 应对业务规则的动态演化}{95}{section.9.2}
+\contentsline {subsection}{\numberline {9.2.1}类型定义的重构与精化}{97}{subsection.9.2.1}
+\contentsline {subsection}{\numberline {9.2.2}Kernel 层的链式反应与自适应规约}{97}{subsection.9.2.2}
+\contentsline {subsection}{\numberline {9.2.3}总结：从逻辑变更到合规执行}{97}{subsection.9.2.3}
+\contentsline {section}{\numberline {9.3}KOS-TL 跨领域逻辑一致性与因果闭环求解}{98}{section.9.3}
+\contentsline {subsection}{\numberline {9.3.1}跨域逻辑锁定：从质量异常到财务冻结}{98}{subsection.9.3.1}
+\contentsline {subsubsection}{\numberline {9.3.1.1}跨域本体定义 (L0 Core 层)}{98}{subsubsection.9.3.1.1}
+\contentsline {subsubsection}{\numberline {9.3.1.2}内核演化与类型归约 (L1 Kernel 层)}{99}{subsubsection.9.3.1.2}
+\contentsline {subsection}{\numberline {9.3.2}逻辑闭环解锁：整改证明驱动的演化}{99}{subsection.9.3.2}
+\contentsline {subsubsection}{\numberline {9.3.2.1}定义整改证明类型}{99}{subsubsection.9.3.2.1}
+\contentsline {subsubsection}{\numberline {9.3.2.2}定义解锁转换算子}{99}{subsubsection.9.3.2.2}
+\contentsline {subsection}{\numberline {9.3.3}求解过程：知行合一的因果轨迹}{99}{subsection.9.3.3}
+\contentsline {section}{\numberline {9.4}KOS-TL 的反事实推理与根因判定}{100}{section.9.4}
+\contentsline {subsection}{\numberline {9.4.1}反事实推理的形式化定义}{100}{subsection.9.4.1}
+\contentsline {subsection}{\numberline {9.4.2}实现机制：虚拟上下文与环境切片}{100}{subsection.9.4.2}
+\contentsline {subsection}{\numberline {9.4.3}根因判定的逻辑深度：构造与验证的解耦}{101}{subsection.9.4.3}
+\contentsline {subsection}{\numberline {9.4.4}应用场景分析}{101}{subsection.9.4.4}
+\contentsline {subsection}{\numberline {9.4.5}结论：从“改想法”到“改世界线”}{101}{subsection.9.4.5}
+\contentsline {section}{\numberline {9.5}决策即合规性推理：基于 Trace 的可证明合法性}{101}{section.9.5}
+\contentsline {subsection}{\numberline {9.5.1}从预测到合规性推理}{101}{subsection.9.5.1}
+\contentsline {subsection}{\numberline {9.5.2}Trace 与可证明合法性}{103}{subsection.9.5.2}
+\contentsline {subsection}{\numberline {9.5.3}具体示例：三类决策及其合法 trace}{103}{subsection.9.5.3}
+\contentsline {subsubsection}{\numberline {9.5.3.1}示例一：根因判定决策——“$a_{volt}$ 为批次 B2310 硬度失效的必要原因”}{103}{subsubsection.9.5.3.1}
+\contentsline {subsubsection}{\numberline {9.5.3.2}示例二：财务冻结决策——“对批次 $b$ 的货款凭证 $v$ 执行冻结”}{103}{subsubsection.9.5.3.2}
+\contentsline {subsubsection}{\numberline {9.5.3.3}示例三：根因报告决策——“出具 RootCauseReport $r$”}{104}{subsubsection.9.5.3.3}
+\contentsline {subsection}{\numberline {9.5.4}小结}{104}{subsection.9.5.4}
+\contentsline {section}{\numberline {9.6}应用示例：AI 决策的可信性与合规边界}{104}{section.9.6}
+\contentsline {subsection}{\numberline {9.6.1}从“单一解释”到“合规建议空间”}{105}{subsection.9.6.1}
+\contentsline {subsection}{\numberline {9.6.2}建议类型与合规性索引}{105}{subsection.9.6.2}
+\contentsline {subsection}{\numberline {9.6.3}具体场景：轴承批次 B001 的“可证明建议空间”}{105}{subsection.9.6.3}
+\contentsline {subsection}{\numberline {9.6.4}审查与验证：Trace 即合规证明}{106}{subsection.9.6.4}
+\contentsline {section}{\numberline {9.7}轴承案例中的轨迹 (Trace) 归纳与形式化分析}{106}{section.9.7}
+\contentsline {subsection}{\numberline {9.7.1}轨迹的形式化总览}{106}{subsection.9.7.1}
+\contentsline {subsection}{\numberline {9.7.2}轨迹阶段的构造性分析}{107}{subsection.9.7.2}
+\contentsline {subsection}{\numberline {9.7.3}轨迹核心价值总结}{107}{subsection.9.7.3}
+\contentsline {section}{\numberline {9.8}逻辑作为系统内核}{107}{section.9.8}
+\contentsline {subsection}{\numberline {9.8.1}状态$\sigma $与轨迹$\mathcal {T}$的详细演化路径}{108}{subsection.9.8.1}
+\contentsline {subsubsection}{\numberline {9.8.1.1}状态$\sigma $的形式化结构}{108}{subsubsection.9.8.1.1}
+\contentsline {subsubsection}{\numberline {9.8.1.2}完整演化轨迹的详细分解}{108}{subsubsection.9.8.1.2}
+\contentsline {subsubsection}{\numberline {9.8.1.3}完整轨迹的形式化表示}{110}{subsubsection.9.8.1.3}
+\contentsline {subsubsection}{\numberline {9.8.1.4}状态$\sigma $的详细内容表}{111}{subsubsection.9.8.1.4}
+\contentsline {subsubsection}{\numberline {9.8.1.5}轨迹$\mathcal {T}$的核心特性}{111}{subsubsection.9.8.1.5}
+\contentsline {subsubsection}{\numberline {9.8.1.6}小步操作语义的形式化}{111}{subsubsection.9.8.1.6}
+\contentsline {subsubsection}{\numberline {9.8.1.7}轨迹演化的可视化表示}{112}{subsubsection.9.8.1.7}
+\contentsline {subsubsection}{\numberline {9.8.1.8}轨迹演化的关键洞察}{112}{subsubsection.9.8.1.8}
+\contentsline {chapter}{\numberline {10}总结}{119}{chapter.10}
+\contentsline {section}{\numberline {10.1}哲学范式：从“真理理论”转向“可执行规范”}{119}{section.10.1}
+\contentsline {section}{\numberline {10.2}逻辑特性：事件驱动与操作语义的融合}{119}{section.10.2}
+\contentsline {section}{\numberline {10.3}系统能力：计算反射性驱动的自治与审计}{119}{section.10.3}
+\contentsline {section}{\numberline {10.4}工程范式：类型程序设计（TDD）的边界拓宽}{120}{section.10.4}
+\contentsline {section}{\numberline {10.5}KOS-TL 的本质}{120}{section.10.5}
+\contentsfinish 

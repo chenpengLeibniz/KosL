@@ -1,0 +1,5 @@
+-- Simple Core example
+
+module Simple where
+
+type MyType : U0

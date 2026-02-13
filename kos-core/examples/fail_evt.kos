@@ -1,0 +1,6 @@
+-- FailEvt type example (matches C core_sigma_example)
+
+module FailEvt where
+
+type ID : U0
+type TIME : U0

@@ -177,7 +177,14 @@ bool kos_check_causal_validity(CausalProof* proof);
 
 // 追溯分析
 RootCauseReport* kos_analyze_quality_traceability(FailEvt failure, kos_state_t* sigma);
+void kos_root_cause_report_free(RootCauseReport* report);
 kos_term* kos_search_causal_evidence(FailEvt failure, kos_state_t* sigma);
+
+// 从 kos_term 事件尝试提取 FailEvt（支持 "FailEvt(...)" 字符串或嵌套 Σ 对结构）
+bool kos_try_extract_fail_evt_from_event(const kos_term* event, FailEvt* out);
+
+// 向 Runtime 注册溯源处理器（用于 kos_runtime_process_signal 自动溯源）
+void kos_manufacturing_register_traceability_handler(void);
 
 // 反事实推理
 bool kos_counterfactual_test(Anomaly anomaly, FailEvt failure, kos_state_t* sigma);

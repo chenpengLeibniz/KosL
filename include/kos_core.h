@@ -29,13 +29,26 @@ typedef enum term_kind {
     KOS_VAL,      // 值类型 (Base Sort)
     KOS_TIME,     // 时间类型 (Base Sort)
     KOS_ID,       // 标识符类型 (Base Sort)
+    KOS_ID_TYPE,  // Id 类型：Id(A, a, b)
     KOS_SIGMA,    // Σ-Types: 依赖和类型 (Dependent Sum Type)
     KOS_PAIR,     // 普通对类型 <d, p>
     KOS_PROP,     // 命题类型 (Prop : Type_1)
     KOS_PI,       // Π-Types: 依赖积类型 (Dependent Product Type)
     KOS_SUM,      // Sum Types: A + B (联合类型)
     KOS_U,        // 计算轴 Universe U_i
-    KOS_TYPE      // 逻辑轴 Universe Type_i
+    KOS_TYPE,     // 逻辑轴 Universe Type_i
+    /* 值依赖谓词：类型构造依赖项的值 */
+    KOS_GT,       // a > b : Prop
+    KOS_GE,       // a >= b
+    KOS_LT,       // a < b
+    KOS_LE,       // a <= b
+    KOS_EQ,       // a == b
+    KOS_APP,      // 函数应用 f a（证明项、归约）
+    KOS_LAM,      // λ 抽象（证明项）
+    KOS_REFL,     // 反身性：refl(a)
+    KOS_LET,      // let x : A := v in t
+    KOS_SPLIT,    // split(p) as x y in t
+    KOS_CASE      // case s of inl x -> t1; inr y -> t2
 } term_kind;
 
 // 基础项结构 - 支持完整的依赖类型系统和双轴世界
@@ -54,11 +67,13 @@ typedef struct kos_term {
         } pair; // <d, p> - 带证数据对
         
         struct { 
+            char* var_name;          // 绑定变量名（可选）
             struct kos_term* domain;  // 域类型
             struct kos_term* body;    // 体类型（依赖域）
         } sigma; // Σ(x:A).B - 依赖和类型
         
         struct {
+            char* var_name;          // 绑定变量名（可选）
             struct kos_term* domain;  // 域类型 A
             struct kos_term* body;    // 体类型 B（依赖域）
             struct kos_term* body_term; // λ抽象体（可选，用于构造）
@@ -75,6 +90,46 @@ typedef struct kos_term {
             universe_axis axis;  // UNIVERSE_COMPUTATIONAL (U_i) 或 UNIVERSE_LOGICAL (Type_i)
             int level;           // 层级 i
         } universe; // Universe类型（U_i 或 Type_i）
+        struct {
+            struct kos_term* left;   // 左操作数
+            struct kos_term* right;  // 右操作数
+        } pred; // 值依赖谓词 GT/GE/LT/LE/EQ
+        struct {
+            struct kos_term* func;   // 函数
+            struct kos_term* arg;    // 参数
+        } app;  // KOS_APP: 函数应用
+        struct {
+            char* var_name;          // 绑定变量名
+            struct kos_term* type;   // 类型
+            struct kos_term* body;   // 体
+        } lam;  // KOS_LAM: λ 抽象
+        struct {
+            struct kos_term* type;   // Id(A, a, b) 的 A
+            struct kos_term* left;   // a
+            struct kos_term* right;  // b
+        } id_type; // KOS_ID_TYPE: Id 类型
+        struct {
+            struct kos_term* value;  // refl(a)
+        } refl; // KOS_REFL
+        struct {
+            char* var_name;          // 变量名
+            struct kos_term* type;   // 类型
+            struct kos_term* value;  // 值
+            struct kos_term* body;   // 体
+        } let_term; // KOS_LET
+        struct {
+            struct kos_term* pair;   // <u, v>
+            char* var1;              // x
+            char* var2;              // y
+            struct kos_term* body;   // t
+        } split; // KOS_SPLIT
+        struct {
+            struct kos_term* sum;    // s
+            char* left_var;          // x
+            struct kos_term* left_body; // t1
+            char* right_var;         // y
+            struct kos_term* right_body; // t2
+        } case_term; // KOS_CASE
     } data;
 } kos_term;
 
@@ -82,6 +137,16 @@ typedef struct kos_term {
 // 双向类型检查：验证 proof 是否为命题 prop 的有效证明
 bool kos_check(kos_term* ctx, kos_term* term, kos_term* type);
 bool kos_type_check(kos_term* ctx, kos_term* proof, kos_term* prop);
+
+// 通过 kos-core 类型检查（当 term_expr、type_expr 为 .kos 字符串时）
+// 若 kos-core 可用则委托给 Haskell 形式化内核，否则返回 false
+// errmsg 可接收错误信息（若 errmsg 非 NULL 且 errmsg_size > 0）
+bool kos_check_via_kos(const char* term_expr, const char* type_expr,
+                       char* errmsg, size_t errmsg_size);
+
+// 类型良构判定：仅当 type 由合法类型构造子（Π/Σ/Sum/Prop/U/Type）构成时返回 true
+// 用于 Core 层阻止非法类型的生成与注册
+bool kos_type_wellformed(kos_term* type);
 
 // ========== Universe层级系统接口 ==========
 // 获取类型的Universe信息
@@ -131,15 +196,22 @@ kos_term* kos_mk_pair(kos_term* data, kos_term* proof);
 
 // 创建依赖类型 Σ(x:A).B
 kos_term* kos_mk_sigma(kos_term* domain, kos_term* body);
+// 创建依赖类型（带变量名）Σ(x:A).B
+kos_term* kos_mk_sigma_named(const char* var_name, kos_term* domain, kos_term* body);
 
 // 创建依赖积类型 Π(x:A).B
 kos_term* kos_mk_pi(kos_term* domain, kos_term* body);
+// 创建依赖积类型（带变量名）Π(x:A).B
+kos_term* kos_mk_pi_named(const char* var_name, kos_term* domain, kos_term* body);
 
 // 创建λ抽象（Π类型引入）
 kos_term* kos_mk_lambda(kos_term* domain, kos_term* body_term);
 
 // 创建函数应用（Π类型消除）
 kos_term* kos_mk_app(kos_term* func, kos_term* arg);
+
+// 创建 λ 抽象（证明项用）
+kos_term* kos_mk_lam(const char* var_name, kos_term* type, kos_term* body);
 
 // 创建和类型 A + B
 kos_term* kos_mk_sum(kos_term* left_type, kos_term* right_type);
@@ -152,9 +224,30 @@ kos_term* kos_mk_inr(kos_term* left_type, kos_term* right_type, kos_term* value)
 
 // 创建case分析（和类型消除）
 kos_term* kos_mk_case(kos_term* sum_term, kos_term* left_branch, kos_term* right_branch);
+// 创建case分析（带变量名）
+kos_term* kos_mk_case_named(kos_term* sum_term, const char* left_var, kos_term* left_branch,
+                            const char* right_var, kos_term* right_branch);
 
 // 创建split操作（Σ类型消除）
 kos_term* kos_mk_split(kos_term* pair_term, kos_term* body_term);
+// 创建split操作（带变量名）
+kos_term* kos_mk_split_named(kos_term* pair_term, const char* var1, const char* var2, kos_term* body_term);
+
+// 创建 Id 类型：Id(A, a, b)
+kos_term* kos_mk_id_type(kos_term* type, kos_term* left, kos_term* right);
+
+// 创建 refl：refl(a)
+kos_term* kos_mk_refl(kos_term* value);
+
+// 创建 let 表达式：let x : A := v in t
+kos_term* kos_mk_let(const char* var_name, kos_term* type, kos_term* value, kos_term* body);
+
+// 值依赖谓词：类型构造依赖项的值
+kos_term* kos_mk_gt(kos_term* left, kos_term* right);   // a > b : Prop
+kos_term* kos_mk_ge(kos_term* left, kos_term* right);   // a >= b
+kos_term* kos_mk_lt(kos_term* left, kos_term* right);   // a < b
+kos_term* kos_mk_le(kos_term* left, kos_term* right);   // a <= b
+kos_term* kos_mk_eq(kos_term* left, kos_term* right);   // a == b
 
 // 复制 term（深拷贝）
 kos_term* kos_term_copy(kos_term* t);

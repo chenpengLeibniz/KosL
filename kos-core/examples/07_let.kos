@@ -1,0 +1,13 @@
+-- Let binding (zeta reduction)
+-- let x : A := v in body
+
+module LetBinding where
+
+type T : Type1
+
+def withLet : T := let x : T := Prop P in x
+
+def nested : T :=
+  let a : T := Prop P in
+  let b : T := a in
+  b

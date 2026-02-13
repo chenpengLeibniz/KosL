@@ -1,0 +1,164 @@
+-- ============================================
+-- CoC Complete Syntax Showcase
+-- ============================================
+-- This file demonstrates all syntax features supported by CoC type checker
+
+-- ============================================
+-- 1. Axiom Declarations
+-- ============================================
+-- Axioms for basic types (can also use inductive)
+axiom Nat : Type
+axiom Bool : Type
+
+-- ============================================
+-- 2. Inductive Types
+-- ============================================
+-- 2.1 Simple inductive type
+inductive Unit : Type with
+  | unit : Unit
+
+-- 2.2 Inductive type with type parameters
+inductive List (A : Type) : Type with
+  | nil : List A
+  | cons : A -> List A -> List A
+
+-- 2.3 Multiple constructors
+inductive Option (A : Type) : Type with
+  | none : Option A
+  | some : A -> Option A
+
+-- 2.4 Bool with constructors
+inductive Bool : Type with
+  | true : Bool
+  | false : Bool
+
+-- 2.5 Nat with constructors
+inductive Nat : Type with
+  | zero : Nat
+  | succ : Nat -> Nat
+
+-- ============================================
+-- 3. Structure Types
+-- ============================================
+structure Point : Type :=
+  (x : Nat)
+  (y : Nat)
+
+structure Pair (A : Type) (B : Type) : Type :=
+  (fst : A)
+  (snd : B)
+
+-- ============================================
+-- 4. Function Definitions
+-- ============================================
+-- 4.1 Explicit parameters
+def identity (A : Type) (x : A) : A := x
+
+def add (x : Nat) (y : Nat) : Nat := x
+
+-- 4.2 Implicit parameters (using braces)
+def id {A : Type} (x : A) : A := x
+
+def const {A : Type} {B : Type} (x : A) (y : B) : A := x
+
+-- 4.3 Mixed explicit and implicit parameters
+def compose {A : Type} {B : Type} {C : Type}
+            (g : B -> C) (f : A -> B) (x : A) : C :=
+  g (f x)
+
+-- ============================================
+-- 5. Pattern Matching
+-- ============================================
+-- 5.1 Simple pattern matching
+def is_zero (n : Nat) : Bool :=
+  match n with
+  case zero => true
+  case succ(_) => false
+
+-- 5.2 Pattern matching with variable binding
+def pred (n : Nat) : Nat :=
+  match n with
+  case zero => zero
+  case succ(m) => m
+
+-- 5.3 List pattern matching
+def head (A : Type) (l : List A) : Option A :=
+  match l with
+  case nil => none A
+  case cons(x, xs) => some A x
+
+-- ============================================
+-- 6. Let Bindings
+-- ============================================
+-- 6.1 Let with type annotation
+def let_example : Nat :=
+  let x : Nat := zero in
+  let y : Nat := succ x in
+  y
+
+-- 6.2 Let with type inference
+def let_inferred : Nat :=
+  let x := zero in
+  let y := succ x in
+  y
+
+-- ============================================
+-- 7. Lambda Abstractions
+-- ============================================
+-- Note: Lambda syntax may vary, using function definitions instead
+def lambda_equivalent (x : Nat) : Nat := succ x
+
+-- ============================================
+-- 8. Structure Projection
+-- ============================================
+-- Note: Structure projection uses projection functions
+axiom point_instance : Point
+axiom Point_x : Point -> Nat
+axiom Point_y : Point -> Nat
+
+def point_x : Nat := Point_x point_instance
+
+def point_y : Nat := Point_y point_instance
+
+-- ============================================
+-- 9. Higher-Order Functions
+-- ============================================
+def apply_twice {A : Type} (f : A -> A) (x : A) : A :=
+  f (f x)
+
+def compose_self {A : Type} (f : A -> A) : A -> A :=
+  compose f f
+
+-- ============================================
+-- 10. Polymorphic Functions
+-- ============================================
+-- 10.1 Explicit type parameters
+def map_explicit (A : Type) (B : Type) (f : A -> B) (l : List A) : List B :=
+  match l with
+  case nil => nil B
+  case cons(x, xs) => cons B (f x) (map_explicit A B f xs)
+
+-- 10.2 Implicit type parameters
+def map_implicit {A : Type} {B : Type} (f : A -> B) (l : List A) : List B :=
+  match l with
+  case nil => nil B
+  case cons(x, xs) => cons B (f x) (map_implicit f xs)
+
+-- ============================================
+-- 11. Type Application
+-- ============================================
+def empty_nat_list : List Nat := nil Nat
+
+def nat_cons : Nat -> List Nat -> List Nat := cons Nat
+
+-- ============================================
+-- 12. Complex Composition Examples
+-- ============================================
+def complex_example {A : Type} {B : Type} (f : A -> B) (l : List A) : List B :=
+  let mapper := map_implicit f in
+  let result := mapper l in
+  result
+
+def point_operations : Nat :=
+  let sum : Nat := Point_x point_instance in
+  sum

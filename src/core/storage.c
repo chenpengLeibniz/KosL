@@ -1,12 +1,21 @@
-// src/core/storage.c
-// Core 层存储和加载工具：序列化/反序列化 kos_term
+/**
+ * @file storage.c
+ * @brief KOS Core 层存储与加载（序列化/反序列化 kos_term）
+ *
+ * 提供 kos_term 与 JSON 的双向转换及文件持久化：
+ * - kos_term_serialize/deserialize: JSON 序列化/反序列化
+ * - kos_term_save_to_file/load_from_file: 文件读写
+ * - kos_knowledge_save/load: 知识集 K 的持久化
+ *
+ * JSON 格式与 kos-core json-term 输出兼容，支持 VAL/TIME/ID/PROP/PAIR/SIGMA/PI/SUM/U/TYPE/ID_TYPE/REFL/LET。
+ */
 
 #include "kos_core.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-// 辅助函数：转义 JSON 字符串
+/** 将 str 转义为 JSON 字符串格式写入 buffer（含外围引号）。 */
 static void json_escape_string(const char* str, char* buffer, size_t buffer_size) {
     if (!str || !buffer || buffer_size == 0) {
         return;
@@ -42,7 +51,7 @@ static void json_escape_string(const char* str, char* buffer, size_t buffer_size
     buffer[pos] = '\0';
 }
 
-// 序列化 term 为 JSON 格式（递归）
+/** 递归序列化 term 为 JSON 对象，写入 buffer，*pos 为当前写入位置。 */
 static void serialize_term_recursive(kos_term* t, char* buffer, size_t buffer_size, size_t* pos) {
     if (!t || !buffer || !pos) {
         return;
@@ -61,13 +70,25 @@ static void serialize_term_recursive(kos_term* t, char* buffer, size_t buffer_si
         case KOS_VAL: kind_str = "VAL"; break;
         case KOS_TIME: kind_str = "TIME"; break;
         case KOS_ID: kind_str = "ID"; break;
+        case KOS_ID_TYPE: kind_str = "ID_TYPE"; break;
         case KOS_SIGMA: kind_str = "SIGMA"; break;
+        case KOS_SPLIT: kind_str = "SPLIT"; break;
         case KOS_PAIR: kind_str = "PAIR"; break;
         case KOS_PROP: kind_str = "PROP"; break;
         case KOS_PI: kind_str = "PI"; break;
         case KOS_SUM: kind_str = "SUM"; break;
         case KOS_U: kind_str = "U"; break;
         case KOS_TYPE: kind_str = "TYPE"; break;
+        case KOS_GT: kind_str = "GT"; break;
+        case KOS_GE: kind_str = "GE"; break;
+        case KOS_LT: kind_str = "LT"; break;
+        case KOS_LE: kind_str = "LE"; break;
+        case KOS_EQ: kind_str = "EQ"; break;
+        case KOS_APP: kind_str = "APP"; break;
+        case KOS_LAM: kind_str = "LAM"; break;
+        case KOS_CASE: kind_str = "CASE"; break;
+        case KOS_REFL: kind_str = "REFL"; break;
+        case KOS_LET: kind_str = "LET"; break;
     }
     
     snprintf(buffer + *pos, buffer_size - *pos, "\"kind\":\"%s\"", kind_str);
@@ -101,8 +122,25 @@ static void serialize_term_recursive(kos_term* t, char* buffer, size_t buffer_si
             *pos += strlen(buffer + *pos);
             serialize_term_recursive(t->data.pair.proof, buffer, buffer_size, pos);
             break;
+        case KOS_ID_TYPE:
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"type\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.id_type.type, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"left\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.id_type.left, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"right\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.id_type.right, buffer, buffer_size, pos);
+            break;
             
         case KOS_SIGMA:
+            if (t->data.sigma.var_name) {
+                char escaped[256];
+                json_escape_string(t->data.sigma.var_name, escaped, sizeof(escaped));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"var\":%s", escaped);
+                *pos += strlen(buffer + *pos);
+            }
             snprintf(buffer + *pos, buffer_size - *pos, ",\"domain\":");
             *pos += strlen(buffer + *pos);
             serialize_term_recursive(t->data.sigma.domain, buffer, buffer_size, pos);
@@ -113,6 +151,12 @@ static void serialize_term_recursive(kos_term* t, char* buffer, size_t buffer_si
             break;
             
         case KOS_PI:
+            if (t->data.pi.var_name) {
+                char escaped[256];
+                json_escape_string(t->data.pi.var_name, escaped, sizeof(escaped));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"var\":%s", escaped);
+                *pos += strlen(buffer + *pos);
+            }
             snprintf(buffer + *pos, buffer_size - *pos, ",\"domain\":");
             *pos += strlen(buffer + *pos);
             serialize_term_recursive(t->data.pi.domain, buffer, buffer_size, pos);
@@ -154,6 +198,107 @@ static void serialize_term_recursive(kos_term* t, char* buffer, size_t buffer_si
             snprintf(buffer + *pos, buffer_size - *pos, ",\"level\":%d", t->data.universe.level);
             *pos += strlen(buffer + *pos);
             break;
+        case KOS_GT:
+        case KOS_GE:
+        case KOS_LT:
+        case KOS_LE:
+        case KOS_EQ:
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"left\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.pred.left, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"right\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.pred.right, buffer, buffer_size, pos);
+            break;
+            
+        case KOS_APP:
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"func\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.app.func, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"arg\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.app.arg, buffer, buffer_size, pos);
+            break;
+            
+        case KOS_LAM:
+            if (t->data.lam.var_name) {
+                char escaped[1024];
+                json_escape_string(t->data.lam.var_name, escaped, sizeof(escaped));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"var\":%s", escaped);
+                *pos += strlen(buffer + *pos);
+            }
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"type\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.lam.type, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"body\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.lam.body, buffer, buffer_size, pos);
+            break;
+        case KOS_SPLIT:
+            if (t->data.split.var1) {
+                char escaped1[256];
+                json_escape_string(t->data.split.var1, escaped1, sizeof(escaped1));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"var1\":%s", escaped1);
+                *pos += strlen(buffer + *pos);
+            }
+            if (t->data.split.var2) {
+                char escaped2[256];
+                json_escape_string(t->data.split.var2, escaped2, sizeof(escaped2));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"var2\":%s", escaped2);
+                *pos += strlen(buffer + *pos);
+            }
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"pair\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.split.pair, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"body\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.split.body, buffer, buffer_size, pos);
+            break;
+        case KOS_CASE:
+            if (t->data.case_term.left_var) {
+                char escapedL[256];
+                json_escape_string(t->data.case_term.left_var, escapedL, sizeof(escapedL));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"left_var\":%s", escapedL);
+                *pos += strlen(buffer + *pos);
+            }
+            if (t->data.case_term.right_var) {
+                char escapedR[256];
+                json_escape_string(t->data.case_term.right_var, escapedR, sizeof(escapedR));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"right_var\":%s", escapedR);
+                *pos += strlen(buffer + *pos);
+            }
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"sum\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.case_term.sum, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"left_body\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.case_term.left_body, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"right_body\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.case_term.right_body, buffer, buffer_size, pos);
+            break;
+        case KOS_REFL:
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"value\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.refl.value, buffer, buffer_size, pos);
+            break;
+        case KOS_LET:
+            if (t->data.let_term.var_name) {
+                char escaped[1024];
+                json_escape_string(t->data.let_term.var_name, escaped, sizeof(escaped));
+                snprintf(buffer + *pos, buffer_size - *pos, ",\"var\":%s", escaped);
+                *pos += strlen(buffer + *pos);
+            }
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"type\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.let_term.type, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"value\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.let_term.value, buffer, buffer_size, pos);
+            snprintf(buffer + *pos, buffer_size - *pos, ",\"body\":");
+            *pos += strlen(buffer + *pos);
+            serialize_term_recursive(t->data.let_term.body, buffer, buffer_size, pos);
+            break;
     }
     
     buffer[*pos] = '}';
@@ -161,7 +306,7 @@ static void serialize_term_recursive(kos_term* t, char* buffer, size_t buffer_si
     buffer[*pos] = '\0';
 }
 
-// 序列化 term 为 JSON 格式
+/** 将 term 序列化为 JSON 字符串，返回 kos_serialized*。调用者负责 kos_serialized_free。 */
 kos_serialized* kos_term_serialize(kos_term* t) {
     if (!t) {
         return NULL;
@@ -395,8 +540,12 @@ static kos_term* deserialize_term_recursive(const char* json_str) {
         kind = KOS_ID;
     } else if (strcmp(kind_str, "PROP") == 0) {
         kind = KOS_PROP;
+    } else if (strcmp(kind_str, "ID_TYPE") == 0) {
+        kind = KOS_ID_TYPE;
     } else if (strcmp(kind_str, "SIGMA") == 0) {
         kind = KOS_SIGMA;
+    } else if (strcmp(kind_str, "SPLIT") == 0) {
+        kind = KOS_SPLIT;
     } else if (strcmp(kind_str, "PI") == 0) {
         kind = KOS_PI;
     } else if (strcmp(kind_str, "SUM") == 0) {
@@ -407,6 +556,26 @@ static kos_term* deserialize_term_recursive(const char* json_str) {
         kind = KOS_U;
     } else if (strcmp(kind_str, "TYPE") == 0) {
         kind = KOS_TYPE;
+    } else if (strcmp(kind_str, "GT") == 0) {
+        kind = KOS_GT;
+    } else if (strcmp(kind_str, "GE") == 0) {
+        kind = KOS_GE;
+    } else if (strcmp(kind_str, "LT") == 0) {
+        kind = KOS_LT;
+    } else if (strcmp(kind_str, "LE") == 0) {
+        kind = KOS_LE;
+    } else if (strcmp(kind_str, "EQ") == 0) {
+        kind = KOS_EQ;
+    } else if (strcmp(kind_str, "APP") == 0) {
+        kind = KOS_APP;
+    } else if (strcmp(kind_str, "LAM") == 0) {
+        kind = KOS_LAM;
+    } else if (strcmp(kind_str, "CASE") == 0) {
+        kind = KOS_CASE;
+    } else if (strcmp(kind_str, "REFL") == 0) {
+        kind = KOS_REFL;
+    } else if (strcmp(kind_str, "LET") == 0) {
+        kind = KOS_LET;
     } else {
         free(kind_str);
         free(obj_str);
@@ -456,8 +625,29 @@ static kos_term* deserialize_term_recursive(const char* json_str) {
             }
             break;
         }
+        case KOS_ID_TYPE: {
+            const char* type_value = find_json_value(obj_str, "type");
+            if (type_value) {
+                term->data.id_type.type = deserialize_term_recursive(type_value);
+            }
+            const char* left_value = find_json_value(obj_str, "left");
+            if (left_value) {
+                term->data.id_type.left = deserialize_term_recursive(left_value);
+            }
+            const char* right_value = find_json_value(obj_str, "right");
+            if (right_value) {
+                term->data.id_type.right = deserialize_term_recursive(right_value);
+            }
+            break;
+        }
         
         case KOS_SIGMA: {
+            const char* var_value = find_json_value(obj_str, "var");
+            if (var_value) {
+                char* var_str = NULL;
+                parse_json_string(var_value, &var_str);
+                if (var_str) term->data.sigma.var_name = var_str;
+            }
             const char* domain_value = find_json_value(obj_str, "domain");
             if (domain_value) {
                 term->data.sigma.domain = deserialize_term_recursive(domain_value);
@@ -470,6 +660,12 @@ static kos_term* deserialize_term_recursive(const char* json_str) {
         }
         
         case KOS_PI: {
+            const char* var_value = find_json_value(obj_str, "var");
+            if (var_value) {
+                char* var_str = NULL;
+                parse_json_string(var_value, &var_str);
+                if (var_str) term->data.pi.var_name = var_str;
+            }
             const char* domain_value = find_json_value(obj_str, "domain");
             if (domain_value) {
                 term->data.pi.domain = deserialize_term_recursive(domain_value);
@@ -523,12 +719,140 @@ static kos_term* deserialize_term_recursive(const char* json_str) {
             }
             break;
         }
+        
+        case KOS_GT:
+        case KOS_GE:
+        case KOS_LT:
+        case KOS_LE:
+        case KOS_EQ: {
+            const char* left_value = find_json_value(obj_str, "left");
+            if (left_value && parse_json_null(left_value) == NULL) {
+                term->data.pred.left = deserialize_term_recursive(left_value);
+            }
+            const char* right_value = find_json_value(obj_str, "right");
+            if (right_value && parse_json_null(right_value) == NULL) {
+                term->data.pred.right = deserialize_term_recursive(right_value);
+            }
+            break;
+        }
+        
+        case KOS_APP: {
+            const char* func_value = find_json_value(obj_str, "func");
+            if (func_value) {
+                term->data.app.func = deserialize_term_recursive(func_value);
+            }
+            const char* arg_value = find_json_value(obj_str, "arg");
+            if (arg_value) {
+                term->data.app.arg = deserialize_term_recursive(arg_value);
+            }
+            break;
+        }
+        
+        case KOS_LAM: {
+            const char* var_value = find_json_value(obj_str, "var");
+            if (var_value) {
+                char* var_str = NULL;
+                parse_json_string(var_value, &var_str);
+                if (var_str) term->data.lam.var_name = var_str;
+            }
+            const char* type_value = find_json_value(obj_str, "type");
+            if (type_value) {
+                term->data.lam.type = deserialize_term_recursive(type_value);
+            }
+            const char* body_value = find_json_value(obj_str, "body");
+            if (body_value) {
+                term->data.lam.body = deserialize_term_recursive(body_value);
+            }
+            break;
+        }
+        case KOS_SPLIT: {
+            const char* var1_value = find_json_value(obj_str, "var1");
+            if (var1_value) {
+                char* var1_str = NULL;
+                parse_json_string(var1_value, &var1_str);
+                if (var1_str) term->data.split.var1 = var1_str;
+            }
+            const char* var2_value = find_json_value(obj_str, "var2");
+            if (var2_value) {
+                char* var2_str = NULL;
+                parse_json_string(var2_value, &var2_str);
+                if (var2_str) term->data.split.var2 = var2_str;
+            }
+            const char* pair_value = find_json_value(obj_str, "pair");
+            if (pair_value) {
+                term->data.split.pair = deserialize_term_recursive(pair_value);
+            }
+            const char* body_value = find_json_value(obj_str, "body");
+            if (body_value) {
+                term->data.split.body = deserialize_term_recursive(body_value);
+            }
+            break;
+        }
+        case KOS_CASE: {
+            const char* left_var_value = find_json_value(obj_str, "left_var");
+            if (left_var_value) {
+                char* lv = NULL;
+                parse_json_string(left_var_value, &lv);
+                if (lv) term->data.case_term.left_var = lv;
+            }
+            const char* right_var_value = find_json_value(obj_str, "right_var");
+            if (right_var_value) {
+                char* rv = NULL;
+                parse_json_string(right_var_value, &rv);
+                if (rv) term->data.case_term.right_var = rv;
+            }
+            const char* sum_value = find_json_value(obj_str, "sum");
+            if (sum_value) {
+                term->data.case_term.sum = deserialize_term_recursive(sum_value);
+            }
+            const char* left_body_value = find_json_value(obj_str, "left_body");
+            if (left_body_value) {
+                term->data.case_term.left_body = deserialize_term_recursive(left_body_value);
+            }
+            const char* right_body_value = find_json_value(obj_str, "right_body");
+            if (right_body_value) {
+                term->data.case_term.right_body = deserialize_term_recursive(right_body_value);
+            }
+            break;
+        }
+        case KOS_REFL: {
+            const char* value_value = find_json_value(obj_str, "value");
+            if (value_value) {
+                term->data.refl.value = deserialize_term_recursive(value_value);
+            }
+            break;
+        }
+        case KOS_LET: {
+            const char* var_value = find_json_value(obj_str, "var");
+            if (var_value) {
+                char* var_str = NULL;
+                parse_json_string(var_value, &var_str);
+                if (var_str) term->data.let_term.var_name = var_str;
+            }
+            const char* type_value = find_json_value(obj_str, "type");
+            if (type_value) {
+                term->data.let_term.type = deserialize_term_recursive(type_value);
+            }
+            const char* value_value = find_json_value(obj_str, "value");
+            if (value_value) {
+                term->data.let_term.value = deserialize_term_recursive(value_value);
+            }
+            const char* body_value = find_json_value(obj_str, "body");
+            if (body_value) {
+                term->data.let_term.body = deserialize_term_recursive(body_value);
+            }
+            break;
+        }
     }
     
     // 设置Universe信息（从类型推断或从数据中获取）
     if (kind == KOS_U || kind == KOS_TYPE) {
         term->universe.axis = term->data.universe.axis;
         term->universe.level = term->data.universe.level;
+    } else if (kind == KOS_GT || kind == KOS_GE || kind == KOS_LT || kind == KOS_LE || kind == KOS_EQ ||
+               kind == KOS_ID_TYPE || kind == KOS_REFL) {
+        term->universe.axis = UNIVERSE_LOGICAL;
+        term->universe.level = 1;  /* Prop : Type_1 */
     } else {
         // 使用默认Universe信息，实际应该从类型推断
         term->universe.axis = UNIVERSE_COMPUTATIONAL;
@@ -539,7 +863,7 @@ static kos_term* deserialize_term_recursive(const char* json_str) {
     return term;
 }
 
-// 从 JSON 格式反序列化 term
+/** 从 JSON 字符串反序列化为 kos_term*。调用者负责 kos_term_free。 */
 kos_term* kos_term_deserialize(const char* json_str) {
     if (!json_str) {
         return NULL;
@@ -548,7 +872,7 @@ kos_term* kos_term_deserialize(const char* json_str) {
     return deserialize_term_recursive(json_str);
 }
 
-// 释放序列化数据
+/** 释放 kos_serialized 及其内部 data。 */
 void kos_serialized_free(kos_serialized* s) {
     if (s) {
         if (s->data) {
@@ -558,7 +882,7 @@ void kos_serialized_free(kos_serialized* s) {
     }
 }
 
-// 存储 term 到文件
+/** 将 term 序列化并写入文件。成功返回 0，失败返回 -1。 */
 int kos_term_save_to_file(kos_term* t, const char* filename) {
     if (!t || !filename) {
         return -1;
@@ -583,7 +907,7 @@ int kos_term_save_to_file(kos_term* t, const char* filename) {
     return (written == serialized->length) ? 0 : -1;
 }
 
-// 从文件加载 term
+/** 从文件读取并反序列化为 kos_term*。调用者负责 kos_term_free。 */
 kos_term* kos_term_load_from_file(const char* filename) {
     if (!filename) {
         return NULL;
@@ -628,12 +952,12 @@ kos_term* kos_term_load_from_file(const char* filename) {
     return term;
 }
 
-// 存储知识集 K 到文件
+/** 存储知识集 K 到文件。委托给 kos_term_save_to_file。 */
 int kos_knowledge_save(kos_term* K, const char* filename) {
     return kos_term_save_to_file(K, filename);
 }
 
-// 从文件加载知识集 K
+/** 从文件加载知识集 K。委托给 kos_term_load_from_file。 */
 kos_term* kos_knowledge_load(const char* filename) {
     return kos_term_load_from_file(filename);
 }

@@ -1,0 +1,11 @@
+-- Id type and refl
+-- Id(A,a,b) for equality, refl w : Id_A(w,w)
+
+module IdRefl where
+
+type T : Type1
+
+def eqType : Type1 := Id(Type1, Prop P, Prop P)
+def reflP : Id(Type1, Prop P, Prop P) := refl (Prop P)
+
+def reflVal : Id(U0, val "x", val "x") := refl (val "x")

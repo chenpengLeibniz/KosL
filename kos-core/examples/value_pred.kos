@@ -1,0 +1,5 @@
+-- Value-dependent predicates demo
+module ValuePred where
+
+def pred200gt180 : Type1 := gt(val "200", val "180")
+def pred185ge180 : Type1 := ge(val "185", val "180")

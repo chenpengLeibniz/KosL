@@ -1,0 +1,16 @@
+[package]
+name = "coc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lalrpop-util = { version = "0.22.2", features = ["lexer", "unicode"] }
+logos = "0.16"
+ariadne = "0.6"
+thiserror = "2.0"
+
+[build-dependencies]
+lalrpop = { version = "0.22.2", features = ["lexer", "unicode"] }
+
+#[lints]
+#workspace = true

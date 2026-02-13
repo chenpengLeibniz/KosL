@@ -1,0 +1,8 @@
+-- Universe types: U0, U1, U, Type0, Type1, Type
+-- Computational axis (U_i) and Logical axis (Type_i)
+
+module Universe where
+
+type U0Kind : U1
+type U1Kind : U1
+type Type1Kind : Type1

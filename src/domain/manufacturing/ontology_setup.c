@@ -1,9 +1,10 @@
 // src/domain/manufacturing/ontology_setup.c
 // 制造业领域类型本体初始化（基于类型构造）
-// 使用类型构造器（Π、Σ、Sum等）构造所有类型定义
+// 优先使用 kos-core 形式化校验，非法类型不能创建
 
 #include "../../../include/kos_ontology.h"
 #include "../../../include/kos_core.h"
+#include "../../../include/kos_core_bridge.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,8 +12,20 @@
 // 制造业领域类型本体文件路径
 #define MANUFACTURING_ONTOLOGY_FILE "manufacturing_ontology.json"
 
+// 从 .kos 添加类型（kos-core 可用时）；否则回退到 kos_mk_* + add_type_definition
+static int add_type(TypeOntology* ontology, const char* name, const char* kos_expr,
+                    kos_term* fallback_term, char* err, size_t err_size) {
+    if (kos_core_bridge_available()) {
+        return kos_ontology_add_type_from_kos(ontology, name, kos_expr, NULL, err, err_size);
+    }
+    if (fallback_term && kos_type_wellformed(fallback_term)) {
+        return kos_ontology_add_type_definition(ontology, name, fallback_term, NULL);
+    }
+    return -1;
+}
+
 // 初始化制造业领域类型本体
-// 如果文件存在则加载，否则创建默认本体（使用类型构造器）
+// 如果文件存在则加载，否则创建默认本体（优先经 kos-core 校验）
 TypeOntology* kos_manufacturing_ontology_init(void) {
     // 尝试从文件加载
     TypeOntology* ontology = kos_ontology_load_from_file(MANUFACTURING_ONTOLOGY_FILE);
@@ -23,74 +36,84 @@ TypeOntology* kos_manufacturing_ontology_init(void) {
     }
     
     // 文件不存在，创建默认本体
-    printf("[Manufacturing] Creating default ontology using type constructors...\n");
+    printf("[Manufacturing] Creating default ontology (kos-core validated when available)...\n");
     ontology = kos_ontology_create("manufacturing");
     if (!ontology) {
         return NULL;
     }
     
-    // ========== 基础类型定义（使用基础Sort） ==========
+    char err[512];
     
-    // BatchID类型：基于ID基础Sort
-    kos_term* batch_id_type = kos_mk_id("BatchID");
-    kos_ontology_add_type_definition(ontology, "BatchID", batch_id_type, NULL);
+    // ========== 基础类型定义 ==========
     
-    // Machine类型：基于ID基础Sort（简化处理，实际可以是更复杂的类型）
-    kos_term* machine_type = kos_mk_id("Machine");
-    kos_ontology_add_type_definition(ontology, "Machine", machine_type, NULL);
-    
-    // Time类型：基于Time基础Sort
-    kos_term* time_type = kos_mk_time("Time");
-    kos_ontology_add_type_definition(ontology, "Time", time_type, NULL);
-    
-    // ErrorCode类型：基于Prop（简化处理）
-    kos_term* error_code_type = kos_mk_prop("ErrorCode");
-    kos_ontology_add_type_definition(ontology, "ErrorCode", error_code_type, NULL);
-    
-    // Param类型：基于Prop（简化处理）
-    kos_term* param_type = kos_mk_prop("Param");
-    kos_ontology_add_type_definition(ontology, "Param", param_type, NULL);
-    
-    // ParamValue类型：基于Prop（简化处理）
-    kos_term* param_value_type = kos_mk_prop("ParamValue");
-    kos_ontology_add_type_definition(ontology, "ParamValue", param_value_type, NULL);
+    add_type(ontology, "BatchID", "Prop BatchID", kos_mk_prop("BatchID"), err, sizeof(err));
+    add_type(ontology, "Machine", "Prop Machine", kos_mk_prop("Machine"), err, sizeof(err));
+    add_type(ontology, "Time", "Prop Time", kos_mk_prop("Time"), err, sizeof(err));
+    add_type(ontology, "ErrorCode", "Prop ErrorCode", kos_mk_prop("ErrorCode"), err, sizeof(err));
+    add_type(ontology, "Param", "Prop Param", kos_mk_prop("Param"), err, sizeof(err));
+    add_type(ontology, "ParamValue", "Prop ParamValue", kos_mk_prop("ParamValue"), err, sizeof(err));
+    add_type(ontology, "TimeRange", "Prop TimeRange", kos_mk_prop("TimeRange"), err, sizeof(err));
     
     // ========== 事件类型定义（使用Σ类型） ==========
     
-    // FailEvt类型：Σ(b: BatchID). Σ(err: ErrorCode). Σ(t: Time). Prop
-    kos_term* prop_type = kos_mk_prop("Prop");
-    
-    kos_term* time_prop_sigma = kos_mk_sigma(time_type, prop_type);
-    kos_term* error_time_prop_sigma = kos_mk_sigma(error_code_type, time_prop_sigma);
-    kos_term* fail_evt_type = kos_mk_sigma(batch_id_type, error_time_prop_sigma);
-    kos_ontology_add_type_definition(ontology, "FailEvt", fail_evt_type, NULL);
-    
-    // ProcStep类型：Σ(b: BatchID). Σ(m: Machine). Σ(dur: TimeRange). Prop
-    // 注意：TimeRange需要先定义，这里简化处理
-    kos_term* time_range_type = kos_mk_prop("TimeRange");
-    kos_term* time_range_prop_sigma = kos_mk_sigma(time_range_type, prop_type);
-    kos_term* machine_time_range_prop_sigma = kos_mk_sigma(machine_type, time_range_prop_sigma);
-    kos_term* proc_step_type = kos_mk_sigma(batch_id_type, machine_time_range_prop_sigma);
-    kos_ontology_add_type_definition(ontology, "ProcStep", proc_step_type, NULL);
-    
-    // Anomaly类型：Σ(m: Machine). Σ(p: Param). Σ(v: ParamValue). Σ(t: Time). Prop
-    kos_term* time_prop_sigma_anomaly = kos_mk_sigma(time_type, prop_type);
-    kos_term* param_value_time_prop_sigma = kos_mk_sigma(param_value_type, time_prop_sigma_anomaly);
-    kos_term* param_param_value_time_prop_sigma = kos_mk_sigma(param_type, param_value_time_prop_sigma);
-    kos_term* anomaly_type = kos_mk_sigma(machine_type, param_param_value_time_prop_sigma);
-    kos_ontology_add_type_definition(ontology, "Anomaly", anomaly_type, NULL);
-    
-    // ========== 谓词类型定义（使用Π类型） ==========
-    
-    // InRoute类型：Π(b: BatchID). Π(m: Machine). Prop
-    kos_term* machine_prop_pi = kos_mk_pi(machine_type, prop_type);
-    kos_term* in_route_type = kos_mk_pi(batch_id_type, machine_prop_pi);
-    kos_ontology_add_type_definition(ontology, "InRoute", in_route_type, NULL);
-    
-    // Overlap类型：Π(t: Time). Π(dur: TimeRange). Prop
-    kos_term* time_range_prop_pi = kos_mk_pi(time_range_type, prop_type);
-    kos_term* overlap_type = kos_mk_pi(time_type, time_range_prop_pi);
-    kos_ontology_add_type_definition(ontology, "Overlap", overlap_type, NULL);
+    if (kos_core_bridge_available()) {
+        add_type(ontology, "FailEvt",
+                 "Sigma(b: Prop BatchID). Sigma(err: Prop ErrorCode). Sigma(t: Prop Time). Prop P",
+                 NULL, err, sizeof(err));
+        add_type(ontology, "ProcStep",
+                 "Sigma(b: Prop BatchID). Sigma(m: Prop Machine). Sigma(dur: Prop TimeRange). Prop P",
+                 NULL, err, sizeof(err));
+        add_type(ontology, "Anomaly",
+                 "Sigma(m: Prop Machine). Sigma(p: Prop Param). Sigma(v: Prop ParamValue). Sigma(t: Prop Time). Prop P",
+                 NULL, err, sizeof(err));
+        add_type(ontology, "InRoute",
+                 "Pi(b: Prop BatchID). Pi(m: Prop Machine). Prop P",
+                 NULL, err, sizeof(err));
+        add_type(ontology, "Overlap",
+                 "Pi(t: Prop Time). Pi(dur: Prop TimeRange). Prop P",
+                 NULL, err, sizeof(err));
+    } else {
+        /* 回退：使用 kos_mk_* 构造（需良构类型） */
+        kos_term* batch_id_type = kos_ontology_find_type_definition(ontology, "BatchID");
+        kos_term* machine_type = kos_ontology_find_type_definition(ontology, "Machine");
+        kos_term* time_type = kos_ontology_find_type_definition(ontology, "Time");
+        kos_term* error_code_type = kos_ontology_find_type_definition(ontology, "ErrorCode");
+        kos_term* param_type = kos_ontology_find_type_definition(ontology, "Param");
+        kos_term* param_value_type = kos_ontology_find_type_definition(ontology, "ParamValue");
+        kos_term* time_range_type = kos_ontology_find_type_definition(ontology, "TimeRange");
+        if (batch_id_type && error_code_type && time_type) {
+            kos_term* p = kos_mk_prop("Prop");
+            kos_term* t1 = p ? kos_mk_sigma(time_type, p) : NULL;
+            kos_term* t2 = t1 ? kos_mk_sigma(error_code_type, t1) : NULL;
+            kos_term* fail_evt = t2 ? kos_mk_sigma(batch_id_type, t2) : NULL;
+            if (fail_evt) { kos_ontology_add_type_definition(ontology, "FailEvt", fail_evt, NULL); kos_term_free(fail_evt); }
+        }
+        if (batch_id_type && machine_type && time_range_type) {
+            kos_term* p = kos_mk_prop("Prop");
+            kos_term* t1 = p ? kos_mk_sigma(time_range_type, p) : NULL;
+            kos_term* t2 = t1 ? kos_mk_sigma(machine_type, t1) : NULL;
+            kos_term* proc_step = t2 ? kos_mk_sigma(batch_id_type, t2) : NULL;
+            if (proc_step) { kos_ontology_add_type_definition(ontology, "ProcStep", proc_step, NULL); kos_term_free(proc_step); }
+        }
+        if (machine_type && param_type && param_value_type && time_type) {
+            kos_term* p = kos_mk_prop("Prop");
+            kos_term* t1 = p ? kos_mk_sigma(time_type, p) : NULL;
+            kos_term* t2 = t1 ? kos_mk_sigma(param_value_type, t1) : NULL;
+            kos_term* t3 = t2 ? kos_mk_sigma(param_type, t2) : NULL;
+            kos_term* anomaly = t3 ? kos_mk_sigma(machine_type, t3) : NULL;
+            if (anomaly) { kos_ontology_add_type_definition(ontology, "Anomaly", anomaly, NULL); kos_term_free(anomaly); }
+        }
+        if (batch_id_type && machine_type) {
+            kos_term* p = kos_mk_prop("Prop");
+            kos_term* in_route = p ? kos_mk_pi(batch_id_type, kos_mk_pi(machine_type, p)) : NULL;
+            if (in_route) { kos_ontology_add_type_definition(ontology, "InRoute", in_route, NULL); kos_term_free(in_route); }
+        }
+        if (time_type && time_range_type) {
+            kos_term* p = kos_mk_prop("Prop");
+            kos_term* overlap = p ? kos_mk_pi(time_type, kos_mk_pi(time_range_type, p)) : NULL;
+            if (overlap) { kos_ontology_add_type_definition(ontology, "Overlap", overlap, NULL); kos_term_free(overlap); }
+        }
+    }
     
     // 添加扩展类型定义
     extern int kos_manufacturing_ontology_add_generated_types(TypeOntology* ontology);

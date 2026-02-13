@@ -1,0 +1,32 @@
+-- Full module: all .kos language features
+-- Universe, Prop, val/time/id, Pi, Sigma, Sum, Id, Let, type, def
+
+module Full where
+
+-- Universe
+type Ty : Type1
+type DataSort : U1
+
+-- Prop and Base Sorts
+def p : Prop P := Prop P
+def v : DataSort := val "data"
+def tm : DataSort := time "2025-01-01"
+def idv : DataSort := id "ID"
+
+-- Pi and arrow
+def f : Ty -> Ty := lam (x : Ty) . x
+
+-- Sigma and split
+def pair : Sigma(x:Type1). Type1 := < Prop P , Prop Q >
+def first : Type1 := split (pair) as x y in x
+
+-- Sum and case
+def sum : Type1 := Prop P + Prop Q
+def left : sum := inl(Prop P, Prop Q, Prop P)
+def elimSum : sum -> Type1 := lam (s : sum) . case s of inl x -> Prop P; inr y -> Prop P
+
+-- Id and refl
+def eq : Id(Ty, Prop P, Prop P) := refl (Prop P)
+
+-- Let
+def viaLet : Ty := let x : Ty := Prop P in x

@@ -1,0 +1,76 @@
+-- 无法构造的根因报告示例
+-- 基于 quality_traceability.kos，演示 prove 无法自动构造 RootCauseReport 的场景
+--
+-- 场景：异常与失效事件语义不一致
+--   - 失效：批次 A，10:00
+--   - 异常：机器 M_01，08:15
+--   - 工序：批次 B（不同批次），机器 M_02（不同机器），07:00-08:00
+--
+-- 关键：未提供 PTimeOK / PSpaceOK / PBatchOK 公理
+--   mkCausalProof 需要这三个证明，prove 的 tryAssumption 无法匹配
+--
+-- 运行证明: kos-core prove --ctx examples/quality_traceability_unconstructable.kos RootCauseReport
+-- 预期: 证明失败 (Nothing)，无法构造
+
+module QualityTraceabilityUnconstructable where
+
+-- =============================================================================
+-- 1. 类型定义 (与 quality_traceability 相同)
+-- =============================================================================
+
+type BatchID   : U0
+type Machine  : U0
+type Time     : U0
+type ErrorCode : U0
+type Param    : U0
+type Val      : U0
+
+def TimeRange : Type1 := Sigma(t_start : Time). Time
+
+def FailEvt : Type1 := Sigma(b : BatchID). Sigma(err : ErrorCode). Sigma(t : Time). Prop PInShiftQA
+def ProcStep : Type1 := Sigma(b : BatchID). Sigma(m : Machine). Sigma(dur : TimeRange). Prop PInRoute
+def Anomaly : Type1 := Sigma(m : Machine). Sigma(p : Param). Sigma(v : Val). Sigma(t : Time). Prop PAnomaly
+def CausalProof : Type1 := Sigma(e : ProcStep). Prop PCausal
+def RootCauseReport : Type1 := Sigma(f : FailEvt). Sigma(a : Anomaly). CausalProof
+
+def mkFailure : Pi(b : BatchID). Pi(err : ErrorCode). Pi(t : Time). (Prop PInShiftQA -> FailEvt) :=
+  lam (b : BatchID) . lam (err : ErrorCode) . lam (t : Time) . lam (prf : Prop PInShiftQA) .
+  < b , < err , < t , prf > > >
+
+def mkStep : Pi(b : BatchID). Pi(m : Machine). Pi(dur : TimeRange). (Prop PInRoute -> ProcStep) :=
+  lam (b : BatchID) . lam (m : Machine) . lam (dur : TimeRange) . lam (prf : Prop PInRoute) .
+  < b , < m , < dur , prf > > >
+
+def mkAnomaly : Pi(m : Machine). Pi(p : Param). Pi(v : Val). Pi(t : Time). Anomaly :=
+  lam (m : Machine) . lam (p : Param) . lam (v : Val) . lam (t : Time) .
+  < m , < p , < v , < t , Prop PAnomaly > > > >
+
+def mkCausalProof : Pi(a : Anomaly). Pi(f : FailEvt). Pi(e : ProcStep).
+  (Prop PTimeOK -> Prop PSpaceOK -> Prop PBatchOK -> CausalProof) :=
+  lam (a : Anomaly) . lam (f : FailEvt) . lam (e : ProcStep) .
+  lam (pTime : Prop PTimeOK) . lam (pSpace : Prop PSpaceOK) . lam (pBatch : Prop PBatchOK) .
+  < e , Prop PCausal >
+
+def mkRootCauseReport : Pi(f : FailEvt). Pi(a : Anomaly). (CausalProof -> RootCauseReport) :=
+  lam (f : FailEvt) . lam (a : Anomaly) . lam (c : CausalProof) .
+  < f , < a , c > >
+
+-- =============================================================================
+-- 2. 语义不一致的待分析事件
+-- =============================================================================
+
+-- 失效：批次 Batch_A，10:00
+def failEvtA : FailEvt :=
+  mkFailure (id "Batch_A") (val "HARD_ERR") (time "10:00") (Prop PInShiftQA)
+
+-- 异常：机器 M_01，08:15（与工序机器 M_02 不同）
+def anomalyM01 : Anomaly := mkAnomaly (val "M_01") (val "Voltage_Drop") (val "15") (time "08:15")
+
+-- 工序：批次 Batch_B（与失效批次不同），机器 M_02（与异常机器不同），07:00-08:00
+def procStepB : ProcStep :=
+  mkStep (id "Batch_B") (val "M_02") (< time "07:00" , time "08:00" >) (Prop PInRoute)
+
+-- 注意：未定义 pTimeOK、pSpaceOK、pBatchOK
+-- 即使语义上 TimeOK/SpaceOK/BatchOK 均不成立，类型系统也不强制这点；
+-- 但 prove 依赖 tryAssumption 匹配这些证明，此处无任何变量可匹配，
+-- 故 mkCausalProof 的第六、五、四个参数无法证明，RootCauseReport 无法自动构造。

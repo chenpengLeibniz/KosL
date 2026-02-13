@@ -24,7 +24,8 @@ int kos_db_close(void) {
 // M 算子：将逻辑事实降级写入物理介质 [cite: 649, 650]
 // 实现原子提交栅栏 (Atomic Commit Fence)
 // 只有物理写入成功后，逻辑演化才算完成 [cite: 659, 660]
-void kos_materialize(kos_state_t* sigma) {
+// 注意：此函数已移至 storage_manager.c，这里保留向后兼容
+void kos_materialize_legacy(kos_state_t* sigma) {
     if (!sigma) {
         return;
     }

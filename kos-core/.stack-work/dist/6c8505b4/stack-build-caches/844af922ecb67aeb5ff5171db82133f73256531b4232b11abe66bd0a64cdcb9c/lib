@@ -1,0 +1,24 @@
+D:\post\KOS\KosL\kos-core\kos-core.cabal:
+  hash: f846bdfbb87ac4c67ec1b80b87a9887723ff5ea48edb85d15dfd2bdf7a48dfd1
+D:\post\KOS\KosL\kos-core\src\KosCore.hs:
+  hash: 1d74e8434141c8c8c69dd497acb9e28c5777d067f80590db53a31c45fa2504f6
+D:\post\KOS\KosL\kos-core\src\KosCore\AST.hs:
+  hash: a1bf0e807d719612aa943eb92395d75bf063ade8671409549c07a00e98af76c7
+D:\post\KOS\KosL\kos-core\src\KosCore\Alpha.hs:
+  hash: b4c104037cc9f18bfd9a6e5ba188df59f7bebde63ff9ae9b5326bb5d46c6b0e4
+D:\post\KOS\KosL\kos-core\src\KosCore\Context.hs:
+  hash: a2adb1b002349bc02865683678532dc237edffbea153066f9541c3c60d9d9910
+D:\post\KOS\KosL\kos-core\src\KosCore\JSON.hs:
+  hash: 2017c3fdd3e85e2195b8ff41545442bf689d5b6a18518571d310de687e1b2fed
+D:\post\KOS\KosL\kos-core\src\KosCore\Parser.hs:
+  hash: ae95ee237091322d8ec2840c5c5e6607bcee87d4759633c6728c4fba2233664b
+D:\post\KOS\KosL\kos-core\src\KosCore\Proof.hs:
+  hash: ca8a11240c03e65d85848dcaaeebc7f7ec1ce927f54e1e27f41562861edd77ed
+D:\post\KOS\KosL\kos-core\src\KosCore\Reduction.hs:
+  hash: b8a89b5266920127242d3d5d3162cb233f0d38252e81861dafa8beb80bc770f9
+D:\post\KOS\KosL\kos-core\src\KosCore\Substitution.hs:
+  hash: 59585e36fff8b1e61badfc56aa1a4379c18259347720c52016185d7a9ac0dee0
+D:\post\KOS\KosL\kos-core\src\KosCore\TypeCheck.hs:
+  hash: efc4d8766d64ad8724661372facfe87bea6875fcdb2583d42f79f30125cc2f1c
+D:\post\KOS\KosL\kos-core\src\KosCore\Universe.hs:
+  hash: 5905b6ba44d326f62a6e92b3c9e9f60da862c90af64176b3f35f228ad15c44bf

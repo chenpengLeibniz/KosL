@@ -1,0 +1,13 @@
+-- Sigma types, Pair, split
+-- Sigma(x:A).B, <d,p>, split p as x y in body
+
+module SigmaPair where
+
+type A : Type1
+type B : Type1
+
+def pairType : Type1 := Sigma(x:A). B
+def myPair : Sigma(x:Type1). Type1 := < Prop P , Prop Q >
+
+def fst : Type1 := split (< Prop P , Prop Q >) as x y in x
+def snd : Type1 := split (< Prop P , Prop Q >) as x y in y

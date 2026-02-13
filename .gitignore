@@ -2,6 +2,7 @@
 build/
 obj/
 bin/
+coc/target/
 
 # CMake generated files
 CMakeCache.txt

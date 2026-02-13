@@ -2,31 +2,29 @@
 // 自动生成的制造业类型定义代码
 // 此文件由 tools/generate_manufacturing_types.py 自动生成
 // 请勿手动编辑此文件
+// 改造：使用 Prop 作为良构类型（KOS_ID/KOS_TIME 非良构），优先 kos-core 校验
 
 #include "../../../include/kos_ontology.h"
 #include "../../../include/kos_core.h"
+#include "../../../include/kos_core_bridge.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-// 辅助函数：添加基础类型定义
+// 辅助函数：添加基础类型定义（优先 kos-core 校验，回退用 Prop 良构类型）
 static void add_basic_type(TypeOntology* ontology, const char* name, term_kind kind) {
-    kos_term* type = NULL;
-    switch (kind) {
-        case KOS_ID:
-            type = kos_mk_id(name);
-            break;
-        case KOS_TIME:
-            type = kos_mk_time(name);
-            break;
-        case KOS_PROP:
-            type = kos_mk_prop(name);
-            break;
-        default:
+    char kos_expr[128];
+    snprintf(kos_expr, sizeof(kos_expr), "Prop %s", name);
+    char err[256];
+    if (kos_core_bridge_available()) {
+        if (kos_ontology_add_type_from_kos(ontology, name, kos_expr, NULL, err, sizeof(err)) == 0) {
             return;
+        }
     }
-    if (type) {
+    kos_term* type = kos_mk_prop(name);
+    if (type && kos_type_wellformed(type)) {
         kos_ontology_add_type_definition(ontology, name, type, NULL);
+        kos_term_free(type);
     }
 }
 

@@ -1,0 +1,47 @@
+-- Type inference and reduction rules comprehensive demo
+-- Covers: Pi intro/elim, Sigma intro/elim, Sum intro/elim, Id intro, Conversion
+-- Reduction: beta, iota(Sigma), iota(Sum), delta, zeta, eta
+-- Value-dependent predicates: gt, ge
+
+module TypeInferenceReduction where
+
+type T : Type1
+type A : Type1
+type B : Type1
+
+-- Pi: Lam intro, App elim, beta reduction (lam x . t) u -> t[u/x]
+def identity : T -> T := lam (x : T) . x
+def applyIdentity : T := identity (Prop P)
+
+-- Sigma: Pair intro, Split elim, iota(Sigma) split(<u,v>,x.y.t) -> t[u/x,v/y]
+def pairType : Type1 := Sigma(x:A). B
+def myPair : Sigma(x:Type1). Type1 := < Prop P , Prop Q >
+def fst : Type1 := split (< Prop P , Prop Q >) as x y in x
+def snd : Type1 := split (< Prop P , Prop Q >) as x y in y
+
+-- Sum: InL/InR intro, Case elim, iota(Sum) case(inl u,x.t,y.v) -> t[u/x]
+def sumType : Type1 := Prop P + Prop Q
+def left : Prop P + Prop Q := inl(Prop P, Prop Q, Prop P)
+def elimSum : Prop P + Prop Q -> Type1 :=
+  lam (s : Prop P + Prop Q) .
+  case s of inl x -> Prop P; inr y -> Prop Q
+def elimResult : Type1 := elimSum left
+
+-- Id: Refl intro, definitionallyEqual
+def eqType : Type1 := Id(Type1, Prop P, Prop P)
+def reflP : Id(Type1, Prop P, Prop P) := refl (Prop P)
+
+-- Let: zeta reduction let x:=u in t -> t[u/x]
+def viaLet : T := let x : T := Prop P in x
+def nestedLet : T :=
+  let a : T := Prop P in
+  let b : T := a in
+  b
+
+-- Delta: def expansion base -> Prop P
+def base : T := Prop P
+def viaDef : T := base
+
+-- Value-dependent predicates: gt, ge (type-level computation)
+def tempOk : Type1 := gt(val "200", val "180")
+def tempSpec : Type1 := ge(val "185", val "180")

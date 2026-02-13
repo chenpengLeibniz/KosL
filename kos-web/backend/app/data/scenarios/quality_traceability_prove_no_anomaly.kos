@@ -1,0 +1,56 @@
+-- 反事实场景：排除 anomalyEx，用于 counterfactual_test
+-- 与 quality_traceability_prove.kos 相同，但不定义 anomalyEx
+-- prove RootCauseReport 将失败（无 Anomaly 可匹配）
+
+module QualityTraceabilityProveNoAnomaly where
+
+type BatchID   : U0
+type Machine  : U0
+type Time     : U0
+type ErrorCode : U0
+type Param    : U0
+type Val      : U0
+
+def TimeRange : Type1 := Sigma(t_start : Time). Time
+def FailEvt : Type1 := Sigma(b : BatchID). Sigma(err : ErrorCode). Sigma(t : Time). Prop PInShiftQA
+def ProcStep : Type1 := Sigma(b : BatchID). Sigma(m : Machine). Sigma(dur : TimeRange). Prop PInRoute
+def Anomaly : Type1 := Sigma(m : Machine). Sigma(p : Param). Sigma(v : Val). Sigma(t : Time). Prop PAnomaly
+def CausalProof : Type1 := Sigma(e : ProcStep). Prop PCausal
+def RootCauseReport : Type1 := Sigma(f : FailEvt). Sigma(a : Anomaly). CausalProof
+
+def mkFailure : Pi(b : BatchID). Pi(err : ErrorCode). Pi(t : Time). (Prop PInShiftQA -> FailEvt) :=
+  lam (b : BatchID) . lam (err : ErrorCode) . lam (t : Time) . lam (prf : Prop PInShiftQA) .
+  < b , < err , < t , prf > > >
+
+def mkStep : Pi(b : BatchID). Pi(m : Machine). Pi(dur : TimeRange). (Prop PInRoute -> ProcStep) :=
+  lam (b : BatchID) . lam (m : Machine) . lam (dur : TimeRange) . lam (prf : Prop PInRoute) .
+  < b , < m , < dur , prf > > >
+
+def mkAnomaly : Pi(m : Machine). Pi(p : Param). Pi(v : Val). Pi(t : Time). Anomaly :=
+  lam (m : Machine) . lam (p : Param) . lam (v : Val) . lam (t : Time) .
+  < m , < p , < v , < t , Prop PAnomaly > > > >
+
+def mkCausalProof : Pi(a : Anomaly). Pi(f : FailEvt). Pi(e : ProcStep).
+  (Prop PTimeOK -> Prop PSpaceOK -> Prop PBatchOK -> CausalProof) :=
+  lam (a : Anomaly) . lam (f : FailEvt) . lam (e : ProcStep) .
+  lam (pTime : Prop PTimeOK) . lam (pSpace : Prop PSpaceOK) . lam (pBatch : Prop PBatchOK) .
+  < e , Prop PCausal >
+
+def mkRootCauseReport : Pi(f : FailEvt). Pi(a : Anomaly). (CausalProof -> RootCauseReport) :=
+  lam (f : FailEvt) . lam (a : Anomaly) . lam (c : CausalProof) .
+  < f , < a , c > >
+
+def batchIdEx : BatchID := id "Batch_202310-01"
+def machineEx : Machine := val "M_03"
+def timeRangeEx : TimeRange := < time "08:00" , time "09:30" >
+
+def failEvtUnderInvestigation : FailEvt :=
+  mkFailure (id "Batch_202310-01") (val "HARD_ERR") (time "10:00") (Prop PInShiftQA)
+
+-- 不定义 anomalyEx（反事实：假设该异常未发生）
+-- def anomalyEx : Anomaly := ...
+
+def procStepEx : ProcStep := mkStep batchIdEx machineEx timeRangeEx (Prop PInRoute)
+def pTimeOK : Prop PTimeOK := Prop PTimeOK
+def pSpaceOK : Prop PSpaceOK := Prop PSpaceOK
+def pBatchOK : Prop PBatchOK := Prop PBatchOK

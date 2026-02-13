@@ -1,0 +1,16 @@
+-- Sum types, inl, inr, case
+-- A + B, inl(A,B,v), inr(A,B,v), case s of inl x -> t1; inr y -> t2
+
+module SumCase where
+
+type L : Type1
+type R : Type1
+
+def sumType : Type1 := Prop P + Prop Q
+
+def left : Prop P + Prop Q := inl(Prop P, Prop Q, Prop P)
+def right : Prop P + Prop Q := inr(Prop P, Prop Q, Prop Q)
+
+def elim : Prop P + Prop Q -> Type1 :=
+  lam (s : Prop P + Prop Q) .
+  case s of inl x -> Prop P; inr y -> Prop P
